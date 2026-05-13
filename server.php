@@ -1,0 +1,6 @@
+<?php
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if (preg_match('/\.(css|js|png|jpg|jpeg|gif|ico|svg|webp)$/', $uri)) {
+    return false;
+}
+include __DIR__ . '/index.php';

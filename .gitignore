@@ -1,0 +1,42 @@
+/.bundle/
+/.yardoc
+/.superpowers
+/_yardoc/
+/coverage/
+/pkg/
+/spec/reports/
+/tmp/
+
+.env
+.aider*
+
+.DS_Store
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.tsbuildinfo
+
+# Ignore local Claude AI settings
+/.claude/settings.local.json
+
+# Git worktrees
+.worktrees/
+/vendor/
+/node_modules/
+
+# PHPUnit cache
+.phpunit.cache/
+
+# Local database
+database.sqlite
+
+# Compiled CSS
+css/compiled.css

@@ -1,0 +1,19 @@
+{
+    "name": "gistats/gistats",
+    "description": "Personal GI health tracker",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "classmap": ["lib/", "router.php"]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    }
+}
