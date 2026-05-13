@@ -137,6 +137,19 @@ $router->get('/entries/more', function () use ($config) {
     include __DIR__ . '/views/partials/event-rows.php';
 });
 
+$router->get('/calendar', function () use ($config) {
+    require_auth();
+    $userId = current_user_id();
+    $tz     = $config['timezone'];
+    $now    = new DateTime('now', new DateTimeZone($tz));
+    $year   = (int) ($_GET['year']  ?? $now->format('Y'));
+    $month  = (int) ($_GET['month'] ?? $now->format('n'));
+    $month  = max(1, min(12, $month));
+    $monthEntries = get_entries_for_month($userId, $year, $month, $tz);
+    $calendar     = build_calendar($year, $month, $monthEntries, $tz);
+    include __DIR__ . '/views/partials/calendar.php';
+});
+
 // Edit: return pre-filled form
 $router->get('/entries/:id/edit', function (string $id) use ($config) {
     require_auth();
