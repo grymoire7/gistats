@@ -29,6 +29,7 @@ function seconds_to_duration(int $seconds): string
 
 function dominant_type(array $types): int
 {
+    if (!$types) return 4;
     $counts = array_count_values(array_map('intval', $types));
     $max    = max($counts);
     $tied   = array_keys(array_filter($counts, fn($c) => $c === $max));
