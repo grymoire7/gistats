@@ -137,6 +137,112 @@ $router->get('/entries/more', function () use ($config) {
     include __DIR__ . '/views/partials/event-rows.php';
 });
 
+// Edit: return pre-filled form
+$router->get('/entries/:id/edit', function (string $id) use ($config) {
+    require_auth();
+    $row = get_entry((int) $id, current_user_id());
+    if (!$row) { http_response_code(404); echo 'Not found'; return; }
+    $entry = array_merge($row, ['is_edit' => true]);
+    include __DIR__ . '/views/partials/entry-form.php';
+});
+
+// Copy: return pre-filled form with now as occurred_at
+$router->get('/entries/:id/copy', function (string $id) use ($config) {
+    require_auth();
+    $row = get_entry((int) $id, current_user_id());
+    if (!$row) { http_response_code(404); echo 'Not found'; return; }
+    $now   = (new DateTime('now', new DateTimeZone($config['timezone'])))->format('Y-m-d\TH:i:s');
+    $entry = array_merge($row, ['occurred_at' => to_utc($now, $config['timezone']), 'is_edit' => false]);
+    // Override occurred_at back to local time string format for the form
+    $entry['_local_occurred_at'] = $now;
+    include __DIR__ . '/views/partials/entry-form.php';
+});
+
+// Update
+$router->post('/entries/:id', function (string $id) use ($config) {
+    require_auth();
+    require_csrf();
+    $userId = current_user_id();
+    $tz     = $config['timezone'];
+
+    $errors = [];
+    if (empty($_POST['stool_type']) || !in_array((int)$_POST['stool_type'], range(1,7))) {
+        $errors[] = 'Please select a stool type.';
+    }
+    if (empty($_POST['occurred_at'])) {
+        $errors[] = 'Date and time are required.';
+    }
+
+    $row = get_entry((int) $id, $userId);
+    if (!$row) { http_response_code(404); echo 'Not found'; return; }
+
+    if ($errors) {
+        $entry = array_merge($row, ['is_edit' => true]);
+        include __DIR__ . '/views/partials/entry-form.php';
+        return;
+    }
+
+    update_entry((int) $id, $userId, [
+        'occurred_at' => $_POST['occurred_at'],
+        'duration'    => $_POST['duration'] ?? '',
+        'stool_type'  => (int) $_POST['stool_type'],
+        'note'        => trim($_POST['note'] ?? ''),
+    ], $tz);
+
+    if (!empty($_SERVER['HTTP_HX_REQUEST'])) {
+        $entry = null;
+        ob_start(); include __DIR__ . '/views/partials/entry-form.php'; $formHtml = ob_get_clean();
+        ob_start(); $flash_type = 'success'; $flash_message = 'Updated!'; include __DIR__ . '/views/partials/flash.php'; $flashHtml = ob_get_clean();
+        echo $formHtml;
+        echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
+    } else {
+        header('Location: /');
+        exit;
+    }
+});
+
+// Delete confirmation fragment
+$router->get('/entries/:id/confirm-delete', function (string $id) use ($config) {
+    require_auth();
+    $row = get_entry((int) $id, current_user_id());
+    if (!$row) { http_response_code(404); echo 'Not found'; return; }
+    $baseUrl = $config['base_url'];
+    echo '<tr id="entry-' . (int)$id . '" style="border-bottom:1px solid var(--color-border);">'
+       . '<td colspan="4" style="padding:12px 16px;font-size:13px;">'
+       . 'Delete this entry? '
+       . '<form method="post" action="' . htmlspecialchars($baseUrl) . '/entries/' . (int)$id . '/delete" style="display:inline;" '
+       . 'hx-post="' . htmlspecialchars($baseUrl) . '/entries/' . (int)$id . '/delete" '
+       . 'hx-target="#entry-' . (int)$id . '" hx-swap="outerHTML swap:300ms">'
+       . csrf_field()
+       . '<button type="submit" class="btn-danger" style="margin-left:8px;">Yes, delete</button>'
+       . '</form>'
+       . ' <button class="btn-outline" style="font-size:11px;padding:3px 10px;margin-left:4px;"'
+       . ' hx-get="' . htmlspecialchars($baseUrl) . '/entries/' . (int)$id . '/row"'
+       . ' hx-target="#entry-' . (int)$id . '" hx-swap="outerHTML">Cancel</button>'
+       . '</td></tr>';
+});
+
+// Cancel delete — return original row
+$router->get('/entries/:id/row', function (string $id) use ($config) {
+    require_auth();
+    $row = get_entry((int) $id, current_user_id());
+    if (!$row) { http_response_code(404); return; }
+    $entries    = [$row];
+    $hasMore    = false;
+    $filterDate = null;
+    include __DIR__ . '/views/partials/event-rows.php';
+});
+
+// Execute delete
+$router->post('/entries/:id/delete', function (string $id) use ($config) {
+    require_auth();
+    require_csrf();
+    delete_entry((int) $id, current_user_id());
+    // Empty response — HTMX removes the row via outerHTML swap with empty string
+    http_response_code(200);
+    echo '';
+});
+
 $result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 if ($result === null) {
     http_response_code(404);
