@@ -17,6 +17,9 @@ class DB
 
     public static function createSchema(): void
     {
+        if (self::$pdo === null) {
+            throw new \LogicException('DB::init() must be called first');
+        }
         self::$pdo->exec('
             CREATE TABLE IF NOT EXISTS users (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +43,9 @@ class DB
 
     public static function query(string $sql, array $params = []): PDOStatement
     {
+        if (self::$pdo === null) {
+            throw new \LogicException('DB::init() must be called first');
+        }
         $stmt = self::$pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt;
@@ -63,6 +69,9 @@ class DB
 
     public static function lastInsertId(): string
     {
+        if (self::$pdo === null) {
+            throw new \LogicException('DB::init() must be called first');
+        }
         return self::$pdo->lastInsertId();
     }
 
