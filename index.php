@@ -66,6 +66,50 @@ $router->post('/logout', function () use ($config) {
     exit;
 });
 
+$router->post('/entries', function () use ($config) {
+    require_auth();
+    require_csrf();
+    $userId = current_user_id();
+    $tz     = $config['timezone'];
+
+    $errors = [];
+    if (empty($_POST['stool_type']) || !in_array((int)$_POST['stool_type'], range(1,7))) {
+        $errors[] = 'Please select a stool type.';
+    }
+    if (empty($_POST['occurred_at'])) {
+        $errors[] = 'Date and time are required.';
+    }
+    if (!empty($_POST['duration']) && !preg_match('/^\d{1,3}:\d{2}$/', $_POST['duration'])) {
+        $errors[] = 'Duration must be in MM:SS format.';
+    }
+
+    if ($errors) {
+        $entry = null;
+        include __DIR__ . '/views/partials/entry-form.php';
+        return;
+    }
+
+    create_entry($userId, [
+        'occurred_at' => $_POST['occurred_at'],
+        'duration'    => $_POST['duration'] ?? '',
+        'stool_type'  => (int) $_POST['stool_type'],
+        'note'        => trim($_POST['note'] ?? ''),
+    ], $tz);
+
+    // Return blank form + flash message for HTMX; redirect for non-HTMX
+    if (!empty($_SERVER['HTTP_HX_REQUEST'])) {
+        $entry = null;
+        ob_start(); include __DIR__ . '/views/partials/entry-form.php'; $formHtml = ob_get_clean();
+        ob_start(); $flash_type = 'success'; $flash_message = 'Saved!'; include __DIR__ . '/views/partials/flash.php'; $flashHtml = ob_get_clean();
+        // Inject flash into flash-area via OOB swap
+        echo $formHtml;
+        echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
+    } else {
+        header('Location: /');
+        exit;
+    }
+});
+
 $result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 if ($result === null) {
     http_response_code(404);
