@@ -49,6 +49,9 @@
     </main>
 
     <script>
+        document.cookie = 'tz=' + encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone) + '; path=/; SameSite=Strict';
+    </script>
+    <script>
         const toggle  = document.getElementById('nav-toggle');
         const drawer  = document.getElementById('nav-drawer');
         const overlay = document.getElementById('nav-overlay');

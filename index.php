@@ -18,6 +18,15 @@ try {
     exit;
 }
 
+if (!empty($_COOKIE['tz'])) {
+    try {
+        new DateTimeZone($_COOKIE['tz']);
+        $config['timezone'] = $_COOKIE['tz'];
+    } catch (\Exception $e) {
+        // invalid timezone — keep config default
+    }
+}
+
 function render(string $view, array $data = []): void {
     global $config;
     extract($data);
@@ -101,9 +110,15 @@ $router->post('/entries', function () use ($config) {
         $entry = null;
         ob_start(); include __DIR__ . '/views/partials/entry-form.php'; $formHtml = ob_get_clean();
         ob_start(); $flash_type = 'success'; $flash_message = 'Saved!'; include __DIR__ . '/views/partials/flash.php'; $flashHtml = ob_get_clean();
-        // Inject flash into flash-area via OOB swap
+        $filterDate = null;
+        $entries    = get_entries($userId);
+        $total      = count_entries($userId);
+        $hasMore    = count($entries) >= 30 && $total > 30;
+        $nextOffset = 30;
+        ob_start(); include __DIR__ . '/views/partials/event-list.php'; $listHtml = ob_get_clean();
         echo $formHtml;
         echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
+        echo '<div id="entries-wrap" hx-swap-oob="true">' . $listHtml . '</div>';
     } else {
         header('Location: /');
         exit;
@@ -162,6 +177,13 @@ $router->get('/stats', function () use ($config) {
     render('stats', compact('movingAvg', 'types', 'typeFreq', 'dailyFreq'));
 });
 
+// Blank new-entry form (used by Cancel in edit mode)
+$router->get('/entries/new', function () use ($config) {
+    require_auth();
+    $entry = null;
+    include __DIR__ . '/views/partials/entry-form.php';
+});
+
 // Edit: return pre-filled form
 $router->get('/entries/:id/edit', function (string $id) use ($config) {
     require_auth();
@@ -218,8 +240,15 @@ $router->post('/entries/:id', function (string $id) use ($config) {
         $entry = null;
         ob_start(); include __DIR__ . '/views/partials/entry-form.php'; $formHtml = ob_get_clean();
         ob_start(); $flash_type = 'success'; $flash_message = 'Updated!'; include __DIR__ . '/views/partials/flash.php'; $flashHtml = ob_get_clean();
+        $filterDate = null;
+        $entries    = get_entries($userId);
+        $total      = count_entries($userId);
+        $hasMore    = count($entries) >= 30 && $total > 30;
+        $nextOffset = 30;
+        ob_start(); include __DIR__ . '/views/partials/event-list.php'; $listHtml = ob_get_clean();
         echo $formHtml;
         echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
+        echo '<div id="entries-wrap" hx-swap-oob="true">' . $listHtml . '</div>';
     } else {
         header('Location: /');
         exit;

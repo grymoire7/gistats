@@ -22,6 +22,20 @@ class HelpersTest extends TestCase
         $this->assertEquals('America/New_York', $dt->getTimezone()->getName());
     }
 
+    public function testToUtcWithBrowserTimezone(): void
+    {
+        // Simulates cookie-supplied timezone overriding config default
+        $utc = to_utc('2026-05-12T14:30:00', 'America/Chicago');
+        $this->assertEquals('2026-05-12T19:30:00Z', $utc); // CDT = UTC-5
+    }
+
+    public function testFromUtcWithBrowserTimezone(): void
+    {
+        $dt = from_utc('2026-05-12T19:30:00Z', 'America/Chicago');
+        $this->assertEquals('2026-05-12T14:30:00', $dt->format('Y-m-d\TH:i:s'));
+        $this->assertEquals('America/Chicago', $dt->getTimezone()->getName());
+    }
+
     // --- Duration ---
 
     public function testDurationToSeconds(): void
@@ -41,6 +55,11 @@ class HelpersTest extends TestCase
     }
 
     // --- Dominant type ---
+
+    public function testDominantTypeEmptyReturnsDefault(): void
+    {
+        $this->assertEquals(4, dominant_type([]));
+    }
 
     public function testDominantTypeReturnsMostFrequent(): void
     {

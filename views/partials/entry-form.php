@@ -11,7 +11,7 @@ $defaultDatetime = (new DateTime('now', new DateTimeZone($tz)))->format('Y-m-d\T
 if ($entry) {
     // Copy mode passes _local_occurred_at directly; edit mode converts from UTC
     if (isset($entry['_local_occurred_at'])) {
-        $datetimeVal = (new DateTime($entry['_local_occurred_at']))->format('Y-m-d\TH:i');
+        $datetimeVal = substr($entry['_local_occurred_at'], 0, 16);
     } else {
         $localDt     = from_utc($entry['occurred_at'], $tz);
         $datetimeVal = $localDt->format('Y-m-d\TH:i');
@@ -25,7 +25,7 @@ if ($entry) {
 } else {
     $datetimeVal  = $defaultDatetime;
     $durationVal  = '05:00';
-    $selectedType = null;
+    $selectedType = 4;
     $noteVal      = '';
     $formAction   = $baseUrl . '/entries';
 }
@@ -67,7 +67,7 @@ $errors = $errors ?? [];
             </div>
         </div>
 
-        <?php include __DIR__ . '/type-selector.php'; ?>
+        <?php $selected = $selectedType; include __DIR__ . '/type-selector.php'; ?>
 
         <div>
             <label style="display:block;font-size:12px;color:var(--color-muted);margin-bottom:4px;">Note</label>
@@ -77,7 +77,14 @@ $errors = $errors ?? [];
 
         <div style="display:flex;gap:10px;">
             <button type="submit" class="btn-primary">Save</button>
+            <?php if ($isEdit): ?>
+            <button type="button" class="btn-outline"
+                hx-get="<?= htmlspecialchars($baseUrl) ?>/entries/new"
+                hx-target="#entry-form-wrap"
+                hx-swap="outerHTML">Cancel</button>
+            <?php else: ?>
             <button type="button" class="btn-outline" onclick="resetForm()">Reset</button>
+            <?php endif; ?>
         </div>
     </form>
 </div>
@@ -94,9 +101,6 @@ function resetForm() {
     document.querySelector('[name="occurred_at"]').value = local;
     document.querySelector('[name="duration"]').value = '05:00';
     document.querySelector('[name="note"]').value = '';
-    document.getElementById('stool-type-input').value = '';
-    document.querySelectorAll('.type-btn').forEach(btn => {
-        btn.style.borderColor = 'var(--color-border)';
-    });
+    selectType(4);
 }
 </script>
