@@ -1,6 +1,8 @@
 # GI Stats
 
-Personal GI health tracker using the Bristol Stool Scale. Log bowel movements, view trends on a calendar, track statistics over time, and export your data as CSV.
+Personal GI health tracker using the Bristol Stool Scale. Log bowel movements,
+view trends on a calendar, track statistics over time, and export your data as
+CSV.
 
 **Tech stack:** PHP 8+, SQLite, HTMX v2, Tailwind CSS v4, Chart.js v4
 
@@ -22,7 +24,8 @@ Create the database and your user account:
 php seed.php
 ```
 
-The script will prompt for a username and password. It creates the SQLite database at `database.sqlite` and applies the schema.
+The script will prompt for a username and password. It creates the SQLite
+database at `database.sqlite` and applies the schema.
 
 ---
 
@@ -56,11 +59,11 @@ npm run test:syntax    # check PHP syntax on all tracked files
 
 Edit `config.php` to change defaults:
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `db_path` | `database.sqlite` | Path to the SQLite database file |
+| Key        | Default            | Description                                   |
+| ---------- | ------------------ | --------------------------------------------- |
+| `db_path`  | `database.sqlite`  | Path to the SQLite database file              |
 | `timezone` | `America/New_York` | Local timezone for display and date filtering |
-| `base_url` | `''` | URL prefix if deployed at a sub-path |
+| `base_url` | `''`               | URL prefix if deployed at a sub-path          |
 
 ---
 
@@ -72,11 +75,14 @@ Edit `config.php` to change defaults:
 php seed.php
 ```
 
-The script uses `INSERT OR REPLACE`, so running it again with the same username updates the password.
+The script uses `INSERT OR REPLACE`, so running it again with the same username
+updates the password.
 
 **Export all data as CSV:**
 
-Navigate to **Export CSV** in the nav drawer while signed in, or visit `/export` directly. The download includes UTC timestamps, local timestamps, duration in seconds, Bristol stool type, and notes.
+Navigate to **Export CSV** in the nav drawer while signed in, or visit
+`/export` directly. The download includes UTC timestamps, local timestamps,
+duration in seconds, Bristol stool type, and notes.
 
 **Wipe and recreate the database:**
 
@@ -89,7 +95,9 @@ php seed.php
 
 ## Deploying with Apache
 
-Copy the project directory to your web root. The `.htaccess` file routes all requests through `index.php`. Ensure `mod_rewrite` is enabled and `AllowOverride All` is set for the directory.
+Copy the project directory to your web root. The `.htaccess` file routes all
+requests through `index.php`. Ensure `mod_rewrite` is enabled and
+`AllowOverride All` is set for the directory.
 
 Set `base_url` in `config.php` if deploying at a sub-path (e.g. `'/gi'`).
 
@@ -123,3 +131,4 @@ Set `base_url` in `config.php` if deploying at a sub-path (e.g. `'/gi'`).
 ├── images/bristol/    # Bristol Stool Chart type illustrations (CC BY-SA)
 └── tests/             # PHPUnit test suite
 ```
+
