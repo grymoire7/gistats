@@ -233,6 +233,12 @@ All data provided as JSON embedded in the `<script>` block of `stats.php`. Chart
 
 ---
 
+## Development Approach
+
+All development follows the TDD red-green-refactor cycle: write a failing test first, make it pass with minimal code, then refactor. PHPUnit for backend (same setup as Enshortener). No feature or bug fix is implemented without a corresponding test written first.
+
+---
+
 ## Error Handling
 
 - Database connection failure: friendly error page (same pattern as Enshortener).
