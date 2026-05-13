@@ -26,17 +26,17 @@
         <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px;">
             <?php if (is_logged_in()): ?>
             <li>
-                <form method="post" action="<?= $config['base_url'] ?>/logout" style="margin:0;">
+                <form method="post" action="<?= htmlspecialchars($config['base_url']) ?>/logout" style="margin:0;">
                     <?= csrf_field() ?>
                     <button type="submit" style="background:none;border:none;color:var(--color-text);font-size:15px;cursor:pointer;padding:0;">Logout</button>
                 </form>
             </li>
             <?php else: ?>
-            <li><a href="<?= $config['base_url'] ?>/login" style="color:var(--color-text);text-decoration:none;font-size:15px;">Login</a></li>
+            <li><a href="<?= htmlspecialchars($config['base_url']) ?>/login" style="color:var(--color-text);text-decoration:none;font-size:15px;">Login</a></li>
             <?php endif; ?>
-            <li><a href="<?= $config['base_url'] ?>/stats" style="color:var(--color-text);text-decoration:none;font-size:15px;">Statistics</a></li>
-            <li><a href="<?= $config['base_url'] ?>/export" style="color:var(--color-text);text-decoration:none;font-size:15px;">Export CSV</a></li>
-            <li><a href="<?= $config['base_url'] ?>/about" style="color:var(--color-text);text-decoration:none;font-size:15px;">About</a></li>
+            <li><a href="<?= htmlspecialchars($config['base_url']) ?>/stats" style="color:var(--color-text);text-decoration:none;font-size:15px;">Statistics</a></li>
+            <li><a href="<?= htmlspecialchars($config['base_url']) ?>/export" style="color:var(--color-text);text-decoration:none;font-size:15px;">Export CSV</a></li>
+            <li><a href="<?= htmlspecialchars($config['base_url']) ?>/about" style="color:var(--color-text);text-decoration:none;font-size:15px;">About</a></li>
         </ul>
     </nav>
 

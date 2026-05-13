@@ -6,7 +6,7 @@ $error = $error ?? null;
     <?php if ($error): ?>
     <p style="color:var(--color-red);margin:0 0 16px;font-size:14px;"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
-    <form method="post" action="/login" style="display:flex;flex-direction:column;gap:14px;">
+    <form method="post" action="<?= htmlspecialchars($config['base_url']) ?>/login" style="display:flex;flex-direction:column;gap:14px;">
         <?= csrf_field() ?>
         <div>
             <label style="display:block;font-size:12px;color:var(--color-muted);margin-bottom:4px;">Username</label>
