@@ -29,7 +29,28 @@ function render(string $view, array $data = []): void {
 
 $router = new Router();
 
-// Routes will be added in later tasks.
+$router->get('/login', function () use ($config) {
+    if (is_logged_in()) { header('Location: /'); exit; }
+    render('login');
+});
+
+$router->post('/login', function () use ($config) {
+    require_csrf();
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    if (login($username, $password)) {
+        header('Location: /');
+        exit;
+    }
+    render('login', ['error' => 'Invalid username or password.']);
+});
+
+$router->post('/logout', function () use ($config) {
+    require_csrf();
+    logout();
+    header('Location: /login');
+    exit;
+});
 
 $result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 if ($result === null) {
