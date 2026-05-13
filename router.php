@@ -42,7 +42,8 @@ class Router {
 
             if (preg_match($pattern, $uri, $matches)) {
                 array_shift($matches); // Remove full match
-                return call_user_func_array($route['handler'], $matches);
+                call_user_func_array($route['handler'], $matches);
+                return true;
             }
         }
 

@@ -29,6 +29,20 @@ function render(string $view, array $data = []): void {
 
 $router = new Router();
 
+$router->get('/', function () use ($config) {
+    require_auth();
+    $userId     = current_user_id();
+    $tz         = $config['timezone'];
+    $now        = new DateTime('now', new DateTimeZone($tz));
+    $year       = (int) $now->format('Y');
+    $month      = (int) $now->format('n');
+    $entries    = get_entries($userId);
+    $monthEntries = get_entries_for_month($userId, $year, $month, $tz);
+    $calendar   = build_calendar($year, $month, $monthEntries, $tz);
+    $total      = count_entries($userId);
+    render('home', compact('entries', 'calendar', 'year', 'month', 'total'));
+});
+
 $router->get('/login', function () use ($config) {
     if (is_logged_in()) { header('Location: /'); exit; }
     render('login');
