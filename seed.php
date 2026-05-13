@@ -27,8 +27,9 @@ if ($username === '' || $password === '') {
 }
 
 DB::execute(
-    'INSERT OR REPLACE INTO users (username, password_hash) VALUES (?, ?)',
+    'INSERT INTO users (username, password_hash) VALUES (?, ?)
+     ON CONFLICT(username) DO UPDATE SET password_hash = excluded.password_hash',
     [$username, password_hash($password, PASSWORD_BCRYPT)]
 );
 
-echo "User '$username' created. Run: php -S localhost:8000 server.php\n";
+echo "User '$username' created/updated. Run: php -S localhost:8000 server.php\n";
