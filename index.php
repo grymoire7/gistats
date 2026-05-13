@@ -110,6 +110,33 @@ $router->post('/entries', function () use ($config) {
     }
 });
 
+// Entries partial (used by calendar date filter and "Show all")
+$router->get('/entries', function () use ($config) {
+    require_auth();
+    $userId     = current_user_id();
+    $tz         = $config['timezone'];
+    $filterDate = $_GET['date'] ?? null;
+    $entries    = get_entries($userId, 0, 30, $filterDate, $filterDate ? $tz : null);
+    $total      = count_entries($userId, $filterDate, $filterDate ? $tz : null);
+    $hasMore    = count($entries) >= 30 && $total > 30;
+    $nextOffset = 30;
+    include __DIR__ . '/views/partials/event-list.php';
+});
+
+// Load more (appends rows)
+$router->get('/entries/more', function () use ($config) {
+    require_auth();
+    $userId     = current_user_id();
+    $tz         = $config['timezone'];
+    $offset     = max(0, (int) ($_GET['offset'] ?? 0));
+    $filterDate = $_GET['date'] ?? null;
+    $entries    = get_entries($userId, $offset, 30, $filterDate, $filterDate ? $tz : null);
+    $total      = count_entries($userId, $filterDate, $filterDate ? $tz : null);
+    $hasMore    = ($offset + count($entries)) < $total;
+    $nextOffset = $offset + 30;
+    include __DIR__ . '/views/partials/event-rows.php';
+});
+
 $result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 if ($result === null) {
     http_response_code(404);
