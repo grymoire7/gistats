@@ -268,6 +268,35 @@ $router->post('/entries/:id/delete', function (string $id) use ($config) {
     echo '';
 });
 
+$router->get('/export', function () use ($config) {
+    require_auth();
+    $userId  = current_user_id();
+    $tz      = $config['timezone'];
+    $entries = get_all_entries($userId);
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="gistats-export-' . date('Y-m-d') . '.csv"');
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['occurred_at_utc', 'occurred_at_local', 'duration_seconds', 'stool_type', 'note']);
+    foreach ($entries as $row) {
+        $local = from_utc($row['occurred_at'], $tz)->format('Y-m-d H:i:s');
+        fputcsv($out, [
+            $row['occurred_at'],
+            $local,
+            $row['duration_seconds'] ?? '',
+            $row['stool_type'],
+            $row['note'] ?? '',
+        ]);
+    }
+    fclose($out);
+    exit;
+});
+
+$router->get('/about', function () use ($config) {
+    render('about');
+});
+
 $result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 if ($result === null) {
     http_response_code(404);
