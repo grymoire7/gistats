@@ -150,6 +150,18 @@ $router->get('/calendar', function () use ($config) {
     include __DIR__ . '/views/partials/calendar.php';
 });
 
+$router->get('/stats', function () use ($config) {
+    require_auth();
+    $userId  = current_user_id();
+    $tz      = $config['timezone'];
+    $all     = get_all_entries($userId);
+    $types   = array_column($all, 'stool_type');
+    $movingAvg   = moving_average(array_map('intval', $types), 7);
+    $typeFreq    = type_frequency($all);
+    $dailyFreq   = daily_frequency($all, $tz, 30);
+    render('stats', compact('movingAvg', 'types', 'typeFreq', 'dailyFreq'));
+});
+
 // Edit: return pre-filled form
 $router->get('/entries/:id/edit', function (string $id) use ($config) {
     require_auth();
