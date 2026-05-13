@@ -1,10 +1,4 @@
-/.bundle/
-/.yardoc
 /.superpowers
-/_yardoc/
-/coverage/
-/pkg/
-/spec/reports/
 /tmp/
 
 .env
