@@ -29,7 +29,7 @@ rodney js "window.dispatchEvent(new Event('offline'))"
 rodney sleep 0.2
 
 # Simulate a send error on the entry form (dispatch on form itself to match HTMX behavior)
-rodney js "var f = document.getElementById('entry-form'); f && f.dispatchEvent(new CustomEvent('htmx:sendError', { bubbles: true, detail: { elt: f } }))"
+rodney js "((f) => f && f.dispatchEvent(new CustomEvent('htmx:sendError', { bubbles: true, detail: { elt: f } })))(document.getElementById('entry-form'))"
 rodney sleep 0.2
 
 # Queue must contain 1 item
