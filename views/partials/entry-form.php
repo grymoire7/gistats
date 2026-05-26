@@ -86,6 +86,13 @@ $errors = $errors ?? [];
             <button type="button" class="btn-outline" onclick="resetForm()">Reset</button>
             <?php endif; ?>
         </div>
+        <div style="min-height:24px;display:flex;align-items:center;">
+            <span id="pending-indicator"
+                  style="display:none;font-size:12px;color:var(--color-muted);"></span>
+            <button id="sync-now-btn" type="button" class="btn-outline"
+                    style="display:none;font-size:12px;padding:4px 14px;margin-left:8px;"
+                    onclick="syncQueue()">Sync now</button>
+        </div>
     </form>
 </div>
 

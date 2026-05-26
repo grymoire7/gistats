@@ -151,4 +151,16 @@ class ViewPartialsTest extends TestCase
         ]);
         $this->assertStringContainsString('action="/entries/7"', $html);
     }
+
+    public function testNewEntryFormHasPendingIndicator(): void
+    {
+        $html = $this->renderEntryForm(null);
+        $this->assertStringContainsString('id="pending-indicator"', $html);
+    }
+
+    public function testNewEntryFormHasSyncNowButton(): void
+    {
+        $html = $this->renderEntryForm(null);
+        $this->assertStringContainsString('id="sync-now-btn"', $html);
+    }
 }
