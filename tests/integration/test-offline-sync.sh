@@ -17,6 +17,10 @@ rodney input '[name="password"]' "$PASSWORD"
 rodney click '[type="submit"]'
 rodney waitload
 
+# Verify login succeeded — entry form only exists on the home page
+rodney visible '#entry-form-wrap'
+echo "PASS: logged in (home page loaded)"
+
 # Pre-populate queue with one valid entry
 NOW=$(date '+%Y-%m-%dT%H:%M')
 rodney js "localStorage.setItem('gistats_pending', JSON.stringify([{ occurred_at: '$NOW', duration: '05:00', stool_type: '4', note: 'integration test' }]))"

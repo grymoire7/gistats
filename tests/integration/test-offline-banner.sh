@@ -17,6 +17,10 @@ rodney input '[name="password"]' "$PASSWORD"
 rodney click '[type="submit"]'
 rodney waitload
 
+# Verify login succeeded — entry form only exists on the home page
+rodney visible '#entry-form-wrap'
+echo "PASS: logged in (home page loaded)"
+
 # Fire offline event and wait for DOM update
 rodney js "window.dispatchEvent(new Event('offline'))"
 rodney sleep 0.3

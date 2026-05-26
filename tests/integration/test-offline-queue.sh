@@ -17,6 +17,10 @@ rodney input '[name="password"]' "$PASSWORD"
 rodney click '[type="submit"]'
 rodney waitload
 
+# Verify login succeeded — entry form only exists on the home page
+rodney visible '#entry-form-wrap'
+echo "PASS: logged in (home page loaded)"
+
 # Clear any pre-existing queue
 rodney js "localStorage.removeItem('gistats_pending')"
 
@@ -24,8 +28,8 @@ rodney js "localStorage.removeItem('gistats_pending')"
 rodney js "window.dispatchEvent(new Event('offline'))"
 rodney sleep 0.2
 
-# Simulate a send error on the entry form (HTMX fires this on network failure)
-rodney js "document.dispatchEvent(new CustomEvent('htmx:sendError', { bubbles: true, detail: { elt: document.getElementById('entry-form') } }))"
+# Simulate a send error on the entry form (dispatch on form itself to match HTMX behavior)
+rodney js "var f = document.getElementById('entry-form'); f && f.dispatchEvent(new CustomEvent('htmx:sendError', { bubbles: true, detail: { elt: f } }))"
 rodney sleep 0.2
 
 # Queue must contain 1 item
