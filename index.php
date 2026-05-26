@@ -327,6 +327,7 @@ $router->get('/about', function () use ($config) {
 });
 
 $router->get('/csrf-token', function () {
+    header('Cache-Control: no-store');
     if (!is_logged_in()) {
         http_response_code(401);
         header('Content-Type: application/json');
