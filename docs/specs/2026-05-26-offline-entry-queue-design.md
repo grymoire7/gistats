@@ -3,9 +3,13 @@
 
 ## Overview
 
-Allow a user to log an entry when there is no network connection. Writes are queued in `localStorage` and replayed automatically (or manually) when connectivity is restored. Read operations degrade gracefully — the user is informed they are offline and dynamic read controls are disabled.
+Allow a user to log an entry when there is no network connection. Writes are
+queued in `localStorage` and replayed automatically (or manually) when
+connectivity is restored. Read operations degrade gracefully — the user is
+informed they are offline and dynamic read controls are disabled.
 
-No service worker is introduced. All logic is vanilla JS (~75 lines) in an inline script block in `layout.php`.
+No service worker is introduced. All logic is vanilla JS (~75 lines) in an
+inline script block in `layout.php`.
 
 ---
 
@@ -71,20 +75,24 @@ GET /csrf-token
 - Token is generated via the existing `csrf.php` helper (same token stored in session).
 - Four lines of PHP added to the router in `index.php`.
 
-Rationale: storing the token with the queued payload risks a 403 on replay if the session expires during a long offline window (e.g., airplane mode overnight). Fetching a fresh token at sync time makes replay robust regardless of offline duration.
+Rationale: storing the token with the queued payload risks a 403 on replay if
+the session expires during a long offline window (e.g., airplane mode
+overnight). Fetching a fresh token at sync time makes replay robust regardless
+of offline duration.
 
 ---
 
 ## UI Elements
 
-All additions fit within the existing dark-mode palette and mobile-first layout. No new view files.
+All additions fit within the existing dark-mode palette and mobile-first
+layout. No new view files.
 
-| Element | Location | Visibility |
-|---|---|---|
-| Offline banner | `layout.php`, below flash area | Offline only |
-| `.offline-disabled` class | Calendar nav, day-filter links, load-more button | Offline only |
-| Pending indicator ("N queued") | `entry-form.php`, near Save button | When queue non-empty |
-| "Sync now" button | `entry-form.php`, below pending indicator | Online + queue non-empty |
+| Element                        | Location                                         | Visibility               |
+| ------------------------------ | ------------------------------------------------ | ------------------------ |
+| Offline banner                 | `layout.php`, below flash area                   | Offline only             |
+| `.offline-disabled` class      | Calendar nav, day-filter links, load-more button | Offline only             |
+| Pending indicator ("N queued") | `entry-form.php`, near Save button               | When queue non-empty     |
+| "Sync now" button              | `entry-form.php`, below pending indicator        | Online + queue non-empty |
 
 **Offline banner** uses existing muted palette: `rgba(255,255,255,0.55)` text on `#2a2a2a` background with `#3a3a3a` border-bottom.
 
@@ -115,16 +123,16 @@ User submits form → HTMX `POST /entries` → 200 → flash + blank form.
 
 ## File Changes
 
-| File | Change |
-|---|---|
-| `index.php` | Add `GET /csrf-token` route (4 lines) |
-| `views/layout.php` | Add offline banner markup + inline JS block (~75 lines) |
-| `views/partials/entry-form.php` | Add pending indicator + sync button |
-| `css/input.css` | Add `.offline-disabled` utility class |
-| `tests/OfflineCsrfTokenTest.php` | PHPUnit tests for new endpoint |
-| `tests/integration/test-offline-banner.sh` | Rodney integration test |
-| `tests/integration/test-offline-queue.sh` | Rodney integration test |
-| `tests/integration/test-offline-sync.sh` | Rodney integration test |
+| File                                       | Change                                                  |
+| ------------------------------------------ | ------------------------------------------------------- |
+| `index.php`                                | Add `GET /csrf-token` route (4 lines)                   |
+| `views/layout.php`                         | Add offline banner markup + inline JS block (~75 lines) |
+| `views/partials/entry-form.php`            | Add pending indicator + sync button                     |
+| `css/input.css`                            | Add `.offline-disabled` utility class                   |
+| `tests/OfflineCsrfTokenTest.php`           | PHPUnit tests for new endpoint                          |
+| `tests/integration/test-offline-banner.sh` | Rodney integration test                                 |
+| `tests/integration/test-offline-queue.sh`  | Rodney integration test                                 |
+| `tests/integration/test-offline-sync.sh`   | Rodney integration test                                 |
 
 ---
 
@@ -151,3 +159,4 @@ Scripts are not wired into CI — they serve as runnable documentation of expect
 - `GET /csrf-token` failure during sync: show flash "Sync failed — will retry when reconnected." Queue preserved.
 - `POST /entries` non-200 response during sync: stop replay at that item, preserve remaining queue, show flash.
 - `localStorage` unavailable (private browsing with storage blocked): catch the `setItem` exception, show flash "Unable to queue entry — storage unavailable."
+

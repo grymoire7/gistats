@@ -1,30 +1,41 @@
 # Offline Entry Queue Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Queue new entry form submissions in `localStorage` when offline and replay them automatically (or manually) when connectivity is restored, while disabling read-only HTMX controls and showing an offline banner.
+**Goal:** Queue new entry form submissions in `localStorage` when offline and
+replay them automatically (or manually) when connectivity is restored, while
+disabling read-only HTMX controls and showing an offline banner.
 
-**Architecture:** Three concerns handled by a single inline JS block in `layout.php`: a connectivity UI layer driven by `window online`/`offline` events, a write queue triggered by `htmx:sendError` on the new-entry form, and a sync path that fetches a fresh CSRF token then POSTs each queued item sequentially. A new `GET /csrf-token` PHP endpoint supports the sync path.
+**Architecture:** Three concerns handled by a single inline JS block in
+`layout.php`: a connectivity UI layer driven by `window online`/`offline`
+events, a write queue triggered by `htmx:sendError` on the new-entry form, and
+a sync path that fetches a fresh CSRF token then POSTs each queued item
+sequentially. A new `GET /csrf-token` PHP endpoint supports the sync path.
 
-**Tech Stack:** PHP/SQLite backend, HTMX v2 (`htmx:sendError`), vanilla JS, `localStorage`, PHPUnit for backend tests, rodney bash scripts for frontend integration tests.
+**Tech Stack:** PHP/SQLite backend, HTMX v2 (`htmx:sendError`), vanilla JS,
+`localStorage`, PHPUnit for backend tests, rodney bash scripts for frontend
+integration tests.
 
 ---
 
 ## File Map
 
-| File | Action | What changes |
-|---|---|---|
-| `index.php` | Modify | Add `GET /csrf-token` route |
-| `views/layout.php` | Modify | Add offline banner div + offline JS block |
-| `views/partials/entry-form.php` | Modify | Add pending indicator + sync button |
-| `views/partials/calendar.php` | Modify | Add `data-offline-disable` to nav buttons + day cells with entries |
-| `views/partials/event-list.php` | Modify | Add `data-offline-disable` to show-all link |
-| `views/partials/event-rows.php` | Modify | Add `data-offline-disable` to load-more button |
-| `css/input.css` | Modify | Add `.offline-disabled` class |
-| `tests/OfflineCsrfTokenTest.php` | Create | PHPUnit tests for CSRF endpoint contract |
-| `tests/integration/test-offline-banner.sh` | Create | Rodney: banner + control disabling |
-| `tests/integration/test-offline-queue.sh` | Create | Rodney: entry queues to localStorage |
-| `tests/integration/test-offline-sync.sh` | Create | Rodney: queue drains on reconnect |
+| File                                       | Action | What changes                                                       |
+| ------------------------------------------ | ------ | ------------------------------------------------------------------ |
+| `index.php`                                | Modify | Add `GET /csrf-token` route                                        |
+| `views/layout.php`                         | Modify | Add offline banner div + offline JS block                          |
+| `views/partials/entry-form.php`            | Modify | Add pending indicator + sync button                                |
+| `views/partials/calendar.php`              | Modify | Add `data-offline-disable` to nav buttons + day cells with entries |
+| `views/partials/event-list.php`            | Modify | Add `data-offline-disable` to show-all link                        |
+| `views/partials/event-rows.php`            | Modify | Add `data-offline-disable` to load-more button                     |
+| `css/input.css`                            | Modify | Add `.offline-disabled` class                                      |
+| `tests/OfflineCsrfTokenTest.php`           | Create | PHPUnit tests for CSRF endpoint contract                           |
+| `tests/integration/test-offline-banner.sh` | Create | Rodney: banner + control disabling                                 |
+| `tests/integration/test-offline-queue.sh`  | Create | Rodney: entry queues to localStorage                               |
+| `tests/integration/test-offline-sync.sh`   | Create | Rodney: queue drains on reconnect                                  |
 
 ---
 
@@ -102,9 +113,13 @@ class OfflineCsrfTokenTest extends TestCase
 vendor/bin/phpunit tests/OfflineCsrfTokenTest.php
 ```
 
-Expected: 5 tests fail with class/function-not-found errors (the test file can't be loaded yet because the route doesn't exist — but the lib functions do, so actually these tests will mostly pass; that's fine, they establish the contract before the route is written).
+Expected: 5 tests fail with class/function-not-found errors (the test file
+can't be loaded yet because the route doesn't exist — but the lib functions do,
+so actually these tests will mostly pass; that's fine, they establish the
+contract before the route is written).
 
-Actually expected: all 5 pass immediately — these test the lib functions, which already exist. Confirm all 5 pass before adding the route.
+Actually expected: all 5 pass immediately — these test the lib functions, which
+already exist. Confirm all 5 pass before adding the route.
 
 - [ ] **Step 3: Add the route to `index.php`**
 
@@ -181,7 +196,8 @@ git commit -m "feat: add .offline-disabled utility class"
 
 - [ ] **Step 1: Write the failing tests**
 
-Add these two methods to `tests/ViewPartialsTest.php` inside the `ViewPartialsTest` class, after the existing test methods:
+Add these two methods to `tests/ViewPartialsTest.php` inside the
+`ViewPartialsTest` class, after the existing test methods:
 
 ```php
 public function testNewEntryFormHasPendingIndicator(): void
@@ -207,7 +223,9 @@ Expected: 2 failures — `pending-indicator` and `sync-now-btn` not found in ren
 
 - [ ] **Step 3: Add pending indicator and sync button to entry-form.php**
 
-In `views/partials/entry-form.php`, after the closing `</div>` of the Save/Reset button row (line ~88, the `<div style="display:flex;gap:10px;">` block), add:
+In `views/partials/entry-form.php`, after the closing `</div>` of the
+Save/Reset button row (line ~88, the `<div style="display:flex;gap:10px;">`
+block), add:
 
 ```php
         <div style="min-height:24px;display:flex;align-items:center;">
@@ -260,7 +278,8 @@ In `views/layout.php`, after `<div id="flash-area"></div>` (line 44), insert:
 
 - [ ] **Step 2: Add data-offline-disable to calendar nav buttons**
 
-In `views/partials/calendar.php`, add `data-offline-disable` to both nav buttons (lines 15–18 and 20–23). The prev button becomes:
+In `views/partials/calendar.php`, add `data-offline-disable` to both nav
+buttons (lines 15–18 and 20–23). The prev button becomes:
 
 ```php
         <button class="btn-outline" style="font-size:12px;padding:4px 12px;"
@@ -282,7 +301,8 @@ The next button becomes:
 
 - [ ] **Step 3: Add data-offline-disable to calendar day cells with entries**
 
-In `views/partials/calendar.php`, on the day `<div>` element (line 39), add `data-offline-disable` when the day has entries. Change:
+In `views/partials/calendar.php`, on the day `<div>` element (line 39), add
+`data-offline-disable` when the day has entries. Change:
 
 ```php
         <div style="background:var(--color-canvas);border:<?= $border ?>;border-radius:5px;padding:3px;text-align:center;min-height:52px;<?= $day['count'] ? 'cursor:pointer;' : '' ?>"
@@ -354,7 +374,9 @@ git commit -m "feat: add offline banner and data-offline-disable attributes to r
 
 - [ ] **Step 1: Add the offline JS block to layout.php**
 
-In `views/layout.php`, add the following script block after the nav-drawer script block (after the closing `</script>` of the nav drawer JS, before `</body>`):
+In `views/layout.php`, add the following script block after the nav-drawer
+script block (after the closing `</script>` of the nav drawer JS, before
+`</body>`):
 
 ```php
     <script>
@@ -503,7 +525,10 @@ git commit -m "feat: add offline JS queue and sync logic"
 - Create: `tests/integration/test-offline-queue.sh`
 - Create: `tests/integration/test-offline-sync.sh`
 
-These scripts are not wired into CI. Run them manually with a dev server running (`npm run server:start`). Set `GISTATS_URL`, `GISTATS_USER`, `GISTATS_PASS` env vars to match your local setup (defaults: `http://localhost:8000`, `admin`, `secret`).
+These scripts are not wired into CI. Run them manually with a dev server
+running (`npm run server:start`). Set `GISTATS_URL`, `GISTATS_USER`,
+`GISTATS_PASS` env vars to match your local setup (defaults:
+`http://localhost:8000`, `admin`, `secret`).
 
 - [ ] **Step 1: Create the integration test directory**
 
