@@ -79,6 +79,26 @@ function get_all_entries(int $userId): array
     );
 }
 
+function build_csv_export(array $entries, string $tz): string
+{
+    $buf = fopen('php://temp', 'w');
+    fputcsv($buf, ['occurred_at_utc', 'occurred_at_local', 'duration_seconds', 'stool_type', 'note'], escape: '\\');
+    foreach ($entries as $row) {
+        $local = from_utc($row['occurred_at'], $tz)->format('Y-m-d H:i:s');
+        fputcsv($buf, [
+            $row['occurred_at'],
+            $local,
+            $row['duration_seconds'] ?? '',
+            $row['stool_type'],
+            $row['note'] ?? '',
+        ], escape: '\\');
+    }
+    rewind($buf);
+    $csv = stream_get_contents($buf);
+    fclose($buf);
+    return $csv;
+}
+
 function count_entries(int $userId, ?string $date = null, ?string $timezone = null): int
 {
     if ($date && $timezone) {

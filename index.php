@@ -305,20 +305,7 @@ $router->get('/export', function () use ($config) {
 
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="gistats-export-' . date('Y-m-d') . '.csv"');
-
-    $out = fopen('php://output', 'w');
-    fputcsv($out, ['occurred_at_utc', 'occurred_at_local', 'duration_seconds', 'stool_type', 'note']);
-    foreach ($entries as $row) {
-        $local = from_utc($row['occurred_at'], $tz)->format('Y-m-d H:i:s');
-        fputcsv($out, [
-            $row['occurred_at'],
-            $local,
-            $row['duration_seconds'] ?? '',
-            $row['stool_type'],
-            $row['note'] ?? '',
-        ]);
-    }
-    fclose($out);
+    echo build_csv_export($entries, $tz);
     exit;
 });
 
