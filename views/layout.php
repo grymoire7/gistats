@@ -70,5 +70,125 @@
             overlay.style.display = 'none';
         }
     </script>
+    <script>
+    (function () {
+        'use strict';
+        var QUEUE_KEY = 'gistats_pending';
+        var BASE_URL  = '<?= htmlspecialchars($config['base_url']) ?>';
+
+        function getQueue() {
+            try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
+            catch (_) { return []; }
+        }
+        function saveQueue(q) {
+            localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+        }
+        function showFlash(msg, type) {
+            var area = document.getElementById('flash-area');
+            if (!area) return;
+            var cls = type === 'error' ? 'flash flash-error' : 'flash flash-success';
+            area.innerHTML = '<div class="' + cls + '" id="flash-msg">' + msg + '</div>';
+            setTimeout(function () {
+                var el = document.getElementById('flash-msg');
+                if (el) el.style.display = 'none';
+            }, 3000);
+        }
+        function updatePendingUI() {
+            var q         = getQueue();
+            var indicator = document.getElementById('pending-indicator');
+            var syncBtn   = document.getElementById('sync-now-btn');
+            if (indicator) {
+                indicator.textContent   = q.length > 0 ? q.length + ' queued' : '';
+                indicator.style.display = q.length > 0 ? 'inline' : 'none';
+            }
+            if (syncBtn) {
+                syncBtn.style.display = (q.length > 0 && navigator.onLine) ? 'inline-block' : 'none';
+            }
+        }
+        function setOfflineState(isOffline) {
+            var banner = document.getElementById('offline-banner');
+            if (banner) banner.style.display = isOffline ? 'block' : 'none';
+            document.querySelectorAll('[data-offline-disable]').forEach(function (el) {
+                el.classList.toggle('offline-disabled', isOffline);
+            });
+            updatePendingUI();
+        }
+
+        setOfflineState(!navigator.onLine);
+        window.addEventListener('offline', function () { setOfflineState(true); });
+        window.addEventListener('online',  function () { setOfflineState(false); syncQueue(); });
+
+        document.addEventListener('htmx:sendError', function (e) {
+            var form = document.getElementById('entry-form');
+            if (!form || e.detail.elt !== form) return;
+            var action = form.getAttribute('action') || '';
+            if (!/\/entries$/.test(action)) return;
+            var fd = new FormData(form);
+            try {
+                var q = getQueue();
+                q.push({
+                    occurred_at: fd.get('occurred_at'),
+                    duration:    fd.get('duration') || '',
+                    stool_type:  fd.get('stool_type'),
+                    note:        fd.get('note') || '',
+                });
+                saveQueue(q);
+                updatePendingUI();
+                if (typeof resetForm === 'function') resetForm();
+            } catch (_) {
+                showFlash('Unable to queue entry — storage unavailable.', 'error');
+            }
+        });
+
+        document.addEventListener('htmx:afterSwap', function () { updatePendingUI(); });
+
+        async function syncQueue() {
+            var q = getQueue();
+            if (q.length === 0) return;
+            var token;
+            try {
+                var r = await fetch(BASE_URL + '/csrf-token');
+                if (!r.ok) throw new Error();
+                token = (await r.json()).token;
+            } catch (_) {
+                showFlash('Sync failed — will retry when reconnected.', 'error');
+                return;
+            }
+            var synced = 0;
+            for (var i = 0; i < q.length; i++) {
+                var item = q[i];
+                try {
+                    var res = await fetch(BASE_URL + '/entries', {
+                        method:  'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'HX-Request':   'true',
+                        },
+                        body: new URLSearchParams({
+                            csrf_token:  token,
+                            occurred_at: item.occurred_at,
+                            duration:    item.duration,
+                            stool_type:  item.stool_type,
+                            note:        item.note,
+                        }).toString(),
+                    });
+                    if (!res.ok) throw new Error();
+                    var remaining = getQueue();
+                    remaining.shift();
+                    saveQueue(remaining);
+                    synced++;
+                    updatePendingUI();
+                } catch (_) {
+                    showFlash('Sync failed — will retry when reconnected.', 'error');
+                    return;
+                }
+            }
+            showFlash(synced + (synced === 1 ? ' entry' : ' entries') + ' synced.', 'success');
+        }
+
+        window.syncQueue = syncQueue;
+        updatePendingUI();
+    }());
+    </script>
 </body>
 </html>
