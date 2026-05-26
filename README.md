@@ -53,6 +53,26 @@ npm test               # run PHPUnit suite
 npm run test:syntax    # check PHP syntax on all tracked files
 ```
 
+### Integration tests
+
+Browser integration tests live in `tests/integration/` and use the `rodney`
+browser automation tool. They require a running dev server and valid credentials.
+
+```bash
+npm run server:start   # start the dev server first
+
+GISTATS_URL=http://localhost:8000 \
+GISTATS_USER=<username> \
+GISTATS_PASS=<password> \
+bash tests/integration/test-offline-banner.sh
+
+bash tests/integration/test-offline-queue.sh   # same env vars
+bash tests/integration/test-offline-sync.sh    # same env vars
+```
+
+`GISTATS_URL`, `GISTATS_USER`, and `GISTATS_PASS` default to
+`http://localhost:8000`, `admin`, and `secret` respectively.
+
 ---
 
 ## Configuration
