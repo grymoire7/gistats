@@ -88,3 +88,8 @@ body {
 }
 .flash-success { background: var(--color-green); color: #fff; }
 .flash-error   { background: var(--color-red);   color: #fff; }
+
+.offline-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
