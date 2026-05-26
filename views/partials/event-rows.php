@@ -52,6 +52,7 @@ foreach ($entries as $row):
 <tr id="load-more-row">
     <td colspan="4" style="padding:12px;text-align:center;">
         <button class="btn-outline"
+            data-offline-disable
             hx-get="<?= htmlspecialchars($baseUrl) ?>/entries/more?offset=<?= $nextOffset ?><?= $filterDate ? '&date=' . urlencode($filterDate) : '' ?>"
             hx-target="#load-more-row"
             hx-swap="outerHTML">Load more</button>

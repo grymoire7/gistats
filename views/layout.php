@@ -43,6 +43,12 @@
     <!-- Flash area (HTMX target) -->
     <div id="flash-area"></div>
 
+    <!-- Offline banner -->
+    <div id="offline-banner"
+         style="display:none;background:var(--color-surface);border-bottom:1px solid var(--color-border);padding:10px 16px;text-align:center;font-size:13px;color:var(--color-muted);">
+        You're offline. Entries will be queued and synced when you reconnect.
+    </div>
+
     <!-- Main content -->
     <main style="max-width:480px;margin:0 auto;padding:20px 16px;">
         <?= $content ?>

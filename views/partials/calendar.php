@@ -13,11 +13,13 @@ $monthName = DateTime::createFromFormat('!m', $month)->format('F');
 <div class="card" style="padding:12px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <button class="btn-outline" style="font-size:12px;padding:4px 12px;"
+            data-offline-disable
             hx-get="<?= htmlspecialchars($baseUrl) ?>/calendar?year=<?= $prevYear ?>&month=<?= $prevMonth ?>"
             hx-target="#calendar-wrap"
             hx-swap="innerHTML">‹</button>
         <span style="font-weight:600;font-size:15px;"><?= htmlspecialchars($monthName) ?> <?= $year ?></span>
         <button class="btn-outline" style="font-size:12px;padding:4px 12px;"
+            data-offline-disable
             hx-get="<?= htmlspecialchars($baseUrl) ?>/calendar?year=<?= $nextYear ?>&month=<?= $nextMonth ?>"
             hx-target="#calendar-wrap"
             hx-swap="innerHTML">›</button>
@@ -38,6 +40,7 @@ $monthName = DateTime::createFromFormat('!m', $month)->format('F');
         ?>
         <div style="background:var(--color-canvas);border:<?= $border ?>;border-radius:5px;padding:3px;text-align:center;min-height:52px;<?= $day['count'] ? 'cursor:pointer;' : '' ?>"
             <?php if ($day['count']): ?>
+            data-offline-disable
             hx-get="<?= htmlspecialchars($baseUrl) ?>/entries?date=<?= htmlspecialchars($day['date']) ?>"
             hx-target="#entries-wrap"
             hx-swap="innerHTML"

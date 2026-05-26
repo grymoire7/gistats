@@ -16,6 +16,7 @@ $baseUrl    = $config['base_url'];
         </h3>
         <?php if ($filterDate): ?>
         <a href="#"
+           data-offline-disable
            hx-get="<?= htmlspecialchars($baseUrl) ?>/entries"
            hx-target="#entries-wrap"
            hx-swap="innerHTML"
