@@ -326,6 +326,17 @@ $router->get('/about', function () use ($config) {
     render('about');
 });
 
+$router->get('/csrf-token', function () {
+    if (!is_logged_in()) {
+        http_response_code(401);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Unauthorized']);
+        return;
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['token' => csrf_token()]);
+});
+
 $result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 if ($result === null) {
     http_response_code(404);
