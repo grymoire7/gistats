@@ -111,6 +111,22 @@ class ImportTest extends TestCase
                  . "2026-05-27T12:00:00Z,2026-05-27 07:00:00,," . $case['stool_type'] . ",\n";
             $result = import_csv($this->userId, $csv, $this->tz);
             $this->assertEquals(0, $result['imported'], 'Should not import for: ' . $case['desc']);
+            $this->assertCount(1, $result['errors'], 'Should report exactly one error for: ' . $case['desc']);
+        }
+    }
+
+    public function testImportNativeInvalidTimestampSkipsRow(): void
+    {
+        $cases = [
+            ['ts' => '2026-05-27 12:00:00',   'desc' => 'space instead of T'],
+            ['ts' => '2026-05-27T12:00:00',    'desc' => 'missing Z'],
+            ['ts' => '',                        'desc' => 'empty string'],
+        ];
+        foreach ($cases as $case) {
+            $csv = "occurred_at_utc,occurred_at_local,duration_seconds,stool_type,note\n"
+                 . $case['ts'] . ",2026-05-27 07:00:00,,4,\n";
+            $result = import_csv($this->userId, $csv, $this->tz);
+            $this->assertEquals(0, $result['imported'], 'Should not import for: ' . $case['desc']);
             $this->assertNotEmpty($result['errors'], 'Should report error for: ' . $case['desc']);
         }
     }
