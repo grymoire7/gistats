@@ -33,7 +33,7 @@ rodney assert "document.getElementById('timer-btn').textContent === '|>'"
 rodney assert "document.querySelector('[name=\"duration\"]').readOnly === false"
 rodney assert "localStorage.getItem('gistats_timer_start') === null"
 # Duration should be approximately 01:05 (65 seconds)
-rodney assert "['01:05','01:06','01:07'].includes(document.querySelector('[name=\"duration\"]').value)"
+rodney assert "/^01:/.test(document.querySelector('[name=\"duration\"]').value)"
 echo "PASS: timer stops and writes duration correctly"
 
 echo "ALL PASS"

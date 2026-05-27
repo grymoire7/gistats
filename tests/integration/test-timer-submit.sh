@@ -28,7 +28,7 @@ rodney waitload
 # Fill required fields and submit
 rodney js "document.querySelector('[name=\"occurred_at\"]').value = '2026-01-01T10:00'"
 rodney js "document.getElementById('stool-type-input').value = '4'"
-rodney click "[type='submit']"
+rodney click 'button.btn-primary'
 rodney sleep 0.5
 rodney assert "localStorage.getItem('gistats_timer_start') === null"
 echo "PASS: timer stops on form submit"
