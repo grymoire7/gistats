@@ -30,6 +30,7 @@ body {
     transition: transform 0.15s ease;
 }
 .btn-primary:active { transform: scale(0.95); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btn-outline {
     background: transparent;
