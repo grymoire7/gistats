@@ -25,7 +25,7 @@ echo "PASS: logged in (home page loaded)"
 rodney js "localStorage.setItem('gistats_timer_start', (Date.now() - 30000).toString())"
 rodney open "$BASE_URL"
 rodney waitload
-rodney assert "document.getElementById('timer-btn').textContent === '[]'"
+rodney assert "document.getElementById('timer-btn').textContent === '■'"
 rodney assert "document.querySelector('[name=\"duration\"]').readOnly === true"
 rodney assert "localStorage.getItem('gistats_timer_start') !== null"
 echo "PASS: timer resumes after page reload"

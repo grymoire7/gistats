@@ -84,7 +84,7 @@ $errors = $errors ?? [];
                 hx-swap="outerHTML">Cancel</button>
             <?php else: ?>
             <button type="button" class="btn-outline" onclick="resetForm()">Reset</button>
-            <button type="button" id="timer-btn" class="btn-outline" onclick="toggleTimer()">|&gt;</button>
+            <button type="button" id="timer-btn" class="btn-outline" onclick="toggleTimer()">▶</button>
             <?php endif; ?>
         </div>
         <div style="min-height:24px;display:flex;align-items:center;">
@@ -134,7 +134,7 @@ $errors = $errors ?? [];
             durationInput.readOnly = false;
             durationInput.classList.remove('duration-readonly');
         }
-        if (timerBtn) timerBtn.textContent = '|>';
+        if (timerBtn) timerBtn.textContent = '▶';
     }
 
     function captureAndStopTimer() {
@@ -148,7 +148,7 @@ $errors = $errors ?? [];
             durationInput.readOnly = true;
             durationInput.classList.add('duration-readonly');
         }
-        if (timerBtn) timerBtn.textContent = '[]';
+        if (timerBtn) timerBtn.textContent = '■';
         updateTimerDisplay();
         window.gistatsTimerInterval = setInterval(updateTimerDisplay, 1000);
     }
@@ -171,7 +171,7 @@ $errors = $errors ?? [];
             durationInput.readOnly = true;
             durationInput.classList.add('duration-readonly');
         }
-        timerBtn.textContent = '[]';
+        timerBtn.textContent = '■';
         updateTimerDisplay();
         window.gistatsTimerInterval = setInterval(updateTimerDisplay, 1000);
     }

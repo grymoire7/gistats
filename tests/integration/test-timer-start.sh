@@ -28,7 +28,7 @@ rodney open "$BASE_URL"
 rodney waitload
 
 rodney click "#timer-btn"
-rodney assert "document.getElementById('timer-btn').textContent === '[]'"
+rodney assert "document.getElementById('timer-btn').textContent === '■'"
 rodney assert "document.querySelector('[name=\"duration\"]').readOnly === true"
 rodney assert "localStorage.getItem('gistats_timer_start') !== null"
 echo "PASS: timer starts correctly"

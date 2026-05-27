@@ -26,10 +26,10 @@ echo "PASS: logged in (home page loaded)"
 rodney js "localStorage.setItem('gistats_timer_start', (Date.now() - 65000).toString())"
 rodney open "$BASE_URL"
 rodney waitload
-rodney assert "document.getElementById('timer-btn').textContent === '[]'"
+rodney assert "document.getElementById('timer-btn').textContent === '■'"
 rodney assert "document.querySelector('[name=\"duration\"]').readOnly === true"
 rodney click "#timer-btn"
-rodney assert "document.getElementById('timer-btn').textContent === '|>'"
+rodney assert "document.getElementById('timer-btn').textContent === '▶'"
 rodney assert "document.querySelector('[name=\"duration\"]').readOnly === false"
 rodney assert "localStorage.getItem('gistats_timer_start') === null"
 # Duration should be approximately 01:05 (65 seconds)
