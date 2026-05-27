@@ -3,7 +3,10 @@
 
 ## Overview
 
-Add a start/stop timer to the new entry form so users can capture duration in real time. The running timer displays in the duration field. Timer state persists in `localStorage` so it survives full page navigations and HTMX partial swaps.
+Add a start/stop timer to the new entry form so users can capture duration in
+real time. The running timer displays in the duration field. Timer state
+persists in `localStorage` so it survives full page navigations and HTMX
+partial swaps.
 
 ---
 
@@ -59,27 +62,42 @@ A single `|>` / `[]` button is added to the right of the Reset button in the new
 
 ### Storage
 
-`localStorage` key `gistats_timer_start` holds the Unix timestamp (ms) at which the timer was started. The key is absent when no timer is running.
+`localStorage` key `gistats_timer_start` holds the Unix timestamp (ms) at which
+the timer was started. The key is absent when no timer is running.
 
 ### Script Location
 
-Timer JS lives as an inline `<script>` in `views/partials/entry-form.php`, alongside the existing `resetForm()` function. It is only rendered when `$isEdit` is false.
+Timer JS lives as an inline `<script>` in `views/partials/entry-form.php`,
+alongside the existing `resetForm()` function. It is only rendered when
+`$isEdit` is false.
 
-Because `#entry-form-wrap` is replaced on every HTMX swap (save, edit, cancel), the script runs fresh on each render. A single `window.gistatsTimerInterval` global tracks the active interval so any orphaned interval from a prior render is cleared before a new one starts.
+Because `#entry-form-wrap` is replaced on every HTMX swap (save, edit, cancel),
+the script runs fresh on each render. A single `window.gistatsTimerInterval`
+global tracks the active interval so any orphaned interval from a prior render
+is cleared before a new one starts.
 
 ### Functions
 
 **`startTimer()`**
-Save `Date.now()` to `localStorage` as `gistats_timer_start`. Set duration field to `readonly`. Swap button text to `[]`. Start a 1-second `setInterval` calling `updateTimerDisplay()`, storing the interval ID in `window.gistatsTimerInterval`.
+Save `Date.now()` to `localStorage` as `gistats_timer_start`. Set duration
+field to `readonly`. Swap button text to `[]`. Start a 1-second `setInterval`
+calling `updateTimerDisplay()`, storing the interval ID in
+`window.gistatsTimerInterval`.
 
 **`stopTimer()`**
-Clear `window.gistatsTimerInterval`. Remove `gistats_timer_start` from `localStorage`. Re-enable the duration field. Swap button text to `|>`. Does not write to the duration field — callers are responsible for capturing the elapsed value first if needed.
+Clear `window.gistatsTimerInterval`. Remove `gistats_timer_start` from
+`localStorage`. Re-enable the duration field. Swap button text to `|>`. Does
+not write to the duration field — callers are responsible for capturing the
+elapsed value first if needed.
 
 **`updateTimerDisplay()`**
-Compute elapsed seconds as `Math.floor((Date.now() - startTime) / 1000)`. Format adaptively and write to the duration field.
+Compute elapsed seconds as `Math.floor((Date.now() - startTime) / 1000)`.
+Format adaptively and write to the duration field.
 
 **`captureAndStopTimer()`**
-Calls `updateTimerDisplay()` to write the final elapsed time to the duration field, then calls `stopTimer()`. This is the standard way to stop the timer — used by the `[]` button click, form submit, and Reset.
+Calls `updateTimerDisplay()` to write the final elapsed time to the duration
+field, then calls `stopTimer()`. This is the standard way to stop the timer —
+used by the `[]` button click, form submit, and Reset.
 
 **`isTimerRunning()`**
 Returns true if `gistats_timer_start` is present in `localStorage`.
@@ -102,16 +120,20 @@ Runs on initial page load and after every HTMX swap that replaces `#entry-form-w
 
 1. Clear `window.gistatsTimerInterval` if it exists.
 2. Read `gistats_timer_start` from `localStorage`.
-3. If found → restore running state: set field to `readonly`, swap button to `[]`, call `updateTimerDisplay()`, start interval.
+3. If found → restore running state: set field to `readonly`, swap button to
+   `[]`, call `updateTimerDisplay()`, start interval.
 4. If not found → idle state: field editable, button shows `|>`.
 
 ### Form Submit Integration
 
-A `submit` event listener on `#entry-form` checks `isTimerRunning()`. If true, calls `captureAndStopTimer()` before HTMX reads the `FormData`. No changes to HTMX configuration needed.
+A `submit` event listener on `#entry-form` checks `isTimerRunning()`. If true,
+calls `captureAndStopTimer()` before HTMX reads the `FormData`. No changes to
+HTMX configuration needed.
 
 ### Reset Integration
 
-`resetForm()` gains a `captureAndStopTimer()` call at the top so the timer is stopped (if running) before the field is reset to `05:00`.
+`resetForm()` gains a `captureAndStopTimer()` call at the top so the timer is
+stopped (if running) before the field is reset to `05:00`.
 
 ---
 
@@ -125,7 +147,8 @@ A `submit` event listener on `#entry-form` checks `isTimerRunning()`. If true, c
 5. Form submits; HTMX swaps in blank form; timer already stopped
 
 **Submit while running:**
-1. User taps Save → `submit` fires → `captureAndStopTimer()` writes final elapsed time to field → HTMX POSTs with correct duration → blank form swaps in
+1. User taps Save → `submit` fires → `captureAndStopTimer()` writes final
+   elapsed time to field → HTMX POSTs with correct duration → blank form swaps in
 
 **Page navigation while running:**
 1. User navigates away (full page load) → `gistats_timer_start` persists in `localStorage`
@@ -142,11 +165,11 @@ A `submit` event listener on `#entry-form` checks `isTimerRunning()`. If true, c
 
 The existing `MM:SS` format is used throughout. `H:MM:SS` support requires changes in three places:
 
-| Location | Current | Updated |
-|----------|---------|---------|
-| Duration `<input pattern>` | `\d{1,2}:\d{2}` | `\d+:\d{2}(:\d{2})?` |
+| Location                                     | Current              | Updated                        |
+| -------------------------------------------- | -------------------- | ------------------------------ |
+| Duration `<input pattern>`                   | `\d{1,2}:\d{2}`      | `\d+:\d{2}(:\d{2})?`           |
 | `seconds_to_duration()` in `lib/helpers.php` | Returns `MM:SS` only | Returns `H:MM:SS` when ≥ 3600s |
-| Duration parser in `lib/helpers.php` | Parses `MM:SS` only | Also parses `H:MM:SS` |
+| Duration parser in `lib/helpers.php`         | Parses `MM:SS` only  | Also parses `H:MM:SS`          |
 
 The database column `duration_seconds` is an integer and requires no change.
 
@@ -154,11 +177,11 @@ The database column `duration_seconds` is an integer and requires no change.
 
 ## File Changes
 
-| File | Change |
-|------|--------|
+| File                            | Change                                                                                                                      |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `views/partials/entry-form.php` | Add timer button (new entry only); add timer JS; update `resetForm()`; add submit listener; update duration input `pattern` |
-| `lib/helpers.php` | Update `seconds_to_duration()` and duration parser for `H:MM:SS` |
-| `css/input.css` | Add readonly opacity style for duration field while timer is running |
+| `lib/helpers.php`               | Update `seconds_to_duration()` and duration parser for `H:MM:SS`                                                            |
+| `css/input.css`                 | Add readonly opacity style for duration field while timer is running                                                        |
 
 ---
 
@@ -177,7 +200,14 @@ The database column `duration_seconds` is an integer and requires no change.
 
 Not wired to CI — serve as runnable documentation of expected behavior.
 
-- **`test-timer-start.sh`** — tap `|>`, assert button shows `[]`, duration field is `readonly`, `gistats_timer_start` is set in `localStorage`
-- **`test-timer-stop.sh`** — set `gistats_timer_start` to a past timestamp via `rodney js`, load page, assert timer is running; tap `[]`, assert field shows elapsed time and is editable, `gistats_timer_start` absent from `localStorage`
-- **`test-timer-submit.sh`** — set `gistats_timer_start`, submit form, assert entry saved with correct duration, `gistats_timer_start` cleared from `localStorage`
-- **`test-timer-resume.sh`** — set `gistats_timer_start` via `rodney js`, reload page, assert timer resumes (field ticking, button shows `[]`)
+- **`test-timer-start.sh`** — tap `|>`, assert button shows `[]`, duration
+  field is `readonly`, `gistats_timer_start` is set in `localStorage`
+- **`test-timer-stop.sh`** — set `gistats_timer_start` to a past timestamp via
+  `rodney js`, load page, assert timer is running; tap `[]`, assert field shows
+  elapsed time and is editable, `gistats_timer_start` absent from `localStorage`
+- **`test-timer-submit.sh`** — set `gistats_timer_start`, submit form, assert
+  entry saved with correct duration, `gistats_timer_start` cleared from
+  `localStorage`
+- **`test-timer-resume.sh`** — set `gistats_timer_start` via `rodney js`,
+  reload page, assert timer resumes (field ticking, button shows `[]`)
+
