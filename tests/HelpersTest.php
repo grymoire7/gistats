@@ -38,12 +38,20 @@ class HelpersTest extends TestCase
 
     // --- Duration ---
 
-    public function testDurationToSeconds(): void
+    public function testDurationToSecondsMMSS(): void
     {
         $this->assertEquals(300,  duration_to_seconds('05:00'));
         $this->assertEquals(330,  duration_to_seconds('05:30'));
         $this->assertEquals(0,    duration_to_seconds('00:00'));
-        $this->assertEquals(3600, duration_to_seconds('60:00'));
+        $this->assertEquals(3599, duration_to_seconds('59:59'));
+    }
+
+    public function testDurationToSecondsHMMSS(): void
+    {
+        $this->assertEquals(3600,   duration_to_seconds('1:00:00'));
+        $this->assertEquals(3930,   duration_to_seconds('1:05:30'));
+        $this->assertEquals(36000,  duration_to_seconds('10:00:00'));
+        $this->assertEquals(360000, duration_to_seconds('100:00:00'));
     }
 
     public function testSecondsToDurationUnderOneHour(): void

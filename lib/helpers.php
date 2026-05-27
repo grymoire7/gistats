@@ -14,12 +14,13 @@ function from_utc(string $utcDatetime, string $timezone): DateTime
     return $dt;
 }
 
-function duration_to_seconds(string $mmss): int
+function duration_to_seconds(string $input): int
 {
-    $parts  = explode(':', $mmss, 2);
-    $minutes = (int) ($parts[0] ?? 0);
-    $seconds = (int) ($parts[1] ?? 0);
-    return $minutes * 60 + $seconds;
+    $parts = explode(':', $input);
+    if (count($parts) === 3) {
+        return (int)$parts[0] * 3600 + (int)$parts[1] * 60 + (int)$parts[2];
+    }
+    return (int)($parts[0] ?? 0) * 60 + (int)($parts[1] ?? 0);
 }
 
 function seconds_to_duration(int $seconds): string
