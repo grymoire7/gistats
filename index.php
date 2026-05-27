@@ -351,7 +351,12 @@ $router->post('/import', function () use ($config) {
     require_csrf();
     $tz = $config['timezone'];
 
-    if (empty($_FILES['csv_file']['tmp_name']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+    $uploadError = $_FILES['csv_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+    if ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
+        render('import', ['error' => 'The uploaded file exceeds the maximum allowed size.']);
+        return;
+    }
+    if (empty($_FILES['csv_file']['tmp_name']) || $uploadError !== UPLOAD_ERR_OK) {
         render('import', ['error' => 'No file uploaded or upload error.']);
         return;
     }
