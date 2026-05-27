@@ -93,3 +93,8 @@ body {
     opacity: 0.4;
     pointer-events: none;
 }
+
+.duration-readonly {
+    opacity: 0.5;
+    pointer-events: none;
+}
