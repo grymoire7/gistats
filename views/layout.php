@@ -24,6 +24,7 @@
             <button onclick="closeNav()" style="background:none;border:none;color:var(--color-muted);font-size:18px;cursor:pointer;">✕</button>
         </div>
         <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px;">
+            <li><a href="<?= htmlspecialchars($config['base_url']) ?>/" style="color:var(--color-text);text-decoration:none;font-size:15px;">Home</a></li>
             <?php if (is_logged_in()): ?>
             <li>
                 <form method="post" action="<?= htmlspecialchars($config['base_url']) ?>/logout" style="margin:0;">
