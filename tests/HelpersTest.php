@@ -46,12 +46,20 @@ class HelpersTest extends TestCase
         $this->assertEquals(3600, duration_to_seconds('60:00'));
     }
 
-    public function testSecondsToDuration(): void
+    public function testSecondsToDurationUnderOneHour(): void
     {
         $this->assertEquals('05:00', seconds_to_duration(300));
         $this->assertEquals('05:30', seconds_to_duration(330));
         $this->assertEquals('00:00', seconds_to_duration(0));
-        $this->assertEquals('60:00', seconds_to_duration(3600));
+        $this->assertEquals('59:59', seconds_to_duration(3599));
+    }
+
+    public function testSecondsToDurationOneHourAndOver(): void
+    {
+        $this->assertEquals('1:00:00', seconds_to_duration(3600));
+        $this->assertEquals('1:05:30', seconds_to_duration(3930));
+        $this->assertEquals('10:00:00', seconds_to_duration(36000));
+        $this->assertEquals('100:00:00', seconds_to_duration(360000));
     }
 
     // --- Dominant type ---

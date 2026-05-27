@@ -24,6 +24,12 @@ function duration_to_seconds(string $mmss): int
 
 function seconds_to_duration(int $seconds): string
 {
+    if ($seconds >= 3600) {
+        $h = intdiv($seconds, 3600);
+        $m = intdiv($seconds % 3600, 60);
+        $s = $seconds % 60;
+        return sprintf('%d:%02d:%02d', $h, $m, $s);
+    }
     return sprintf('%02d:%02d', intdiv($seconds, 60), $seconds % 60);
 }
 
