@@ -63,7 +63,7 @@ $errors = $errors ?? [];
                 <label style="display:block;font-size:12px;color:var(--color-muted);margin-bottom:4px;">Duration</label>
                 <input class="form-input" type="text" name="duration"
                        value="<?= htmlspecialchars($durationVal) ?>"
-                       placeholder="MM:SS" pattern="\d{1,2}:\d{2}">
+                       placeholder="MM:SS" pattern="\d+:\d{2}(:\d{2})?">
             </div>
         </div>
 
@@ -84,6 +84,7 @@ $errors = $errors ?? [];
                 hx-swap="outerHTML">Cancel</button>
             <?php else: ?>
             <button type="button" class="btn-outline" onclick="resetForm()">Reset</button>
+            <button type="button" id="timer-btn" class="btn-outline" onclick="toggleTimer()">|&gt;</button>
             <?php endif; ?>
         </div>
         <div style="min-height:24px;display:flex;align-items:center;">

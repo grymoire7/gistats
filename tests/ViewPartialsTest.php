@@ -163,4 +163,23 @@ class ViewPartialsTest extends TestCase
         $html = $this->renderEntryForm(null);
         $this->assertStringContainsString('id="sync-now-btn"', $html);
     }
+
+    public function testNewEntryFormHasTimerButton(): void
+    {
+        $html = $this->renderEntryForm(null);
+        $this->assertStringContainsString('id="timer-btn"', $html);
+    }
+
+    public function testEditFormDoesNotHaveTimerButton(): void
+    {
+        $html = $this->renderEntryForm([
+            'id'               => 1,
+            'occurred_at'      => '2026-05-12T19:30:00Z',
+            'stool_type'       => 4,
+            'duration_seconds' => null,
+            'note'             => '',
+            'is_edit'          => true,
+        ]);
+        $this->assertStringNotContainsString('id="timer-btn"', $html);
+    }
 }
