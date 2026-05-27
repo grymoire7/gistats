@@ -88,8 +88,8 @@ $router->post('/entries', function () use ($config) {
     if (empty($_POST['occurred_at'])) {
         $errors[] = 'Date and time are required.';
     }
-    if (!empty($_POST['duration']) && !preg_match('/^\d{1,3}:\d{2}$/', $_POST['duration'])) {
-        $errors[] = 'Duration must be in MM:SS format.';
+    if (!empty($_POST['duration']) && !preg_match('/^\d+:\d{2}(:\d{2})?$/', $_POST['duration'])) {
+        $errors[] = 'Duration must be in MM:SS or H:MM:SS format.';
     }
 
     if ($errors) {

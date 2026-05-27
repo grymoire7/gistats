@@ -166,19 +166,19 @@ $errors = $errors ?? [];
         clearInterval(window.gistatsTimerInterval);
         window.gistatsTimerInterval = null;
     }
-    if (isTimerRunning()) {
+    if (isTimerRunning() && timerBtn) {
         if (durationInput) {
             durationInput.readOnly = true;
             durationInput.classList.add('duration-readonly');
         }
-        if (timerBtn) timerBtn.textContent = '[]';
+        timerBtn.textContent = '[]';
         updateTimerDisplay();
         window.gistatsTimerInterval = setInterval(updateTimerDisplay, 1000);
     }
 
     // Capture duration before HTMX POSTs the form
     var form = document.getElementById('entry-form');
-    if (form) {
+    if (form && timerBtn) {
         form.addEventListener('submit', function () {
             if (isTimerRunning()) captureAndStopTimer();
         });
