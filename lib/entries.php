@@ -120,3 +120,97 @@ function count_entries(int $userId, ?string $date = null, ?string $timezone = nu
     }
     return (int) ($row['n'] ?? 0);
 }
+
+function normalize_native_row(array $row, array $colIdx, int $rowNum): array|string
+{
+    $occurredAt  = $row[$colIdx['occurred_at_utc']] ?? '';
+    $durationSec = ($row[$colIdx['duration_seconds']] ?? '') !== ''
+        ? (int) $row[$colIdx['duration_seconds']] : null;
+    $stoolRaw    = trim($row[$colIdx['stool_type']] ?? '');
+    $note        = ($row[$colIdx['note']] ?? '') !== '' ? $row[$colIdx['note']] : null;
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $occurredAt)) {
+        return "Row $rowNum: invalid occurred_at_utc \"$occurredAt\".";
+    }
+    if (!ctype_digit($stoolRaw) || (int) $stoolRaw < 1 || (int) $stoolRaw > 7) {
+        return "Row $rowNum: stool_type \"$stoolRaw\" is not an integer in range 1–7.";
+    }
+
+    return [
+        'occurred_at'      => $occurredAt,
+        'stool_type'       => (int) $stoolRaw,
+        'duration_seconds' => $durationSec,
+        'note'             => $note,
+    ];
+}
+
+function import_csv(int $userId, string $csvContent, string $timezone): array
+{
+    $result = ['imported' => 0, 'skipped_duplicates' => 0, 'errors' => []];
+
+    $buf = fopen('php://temp', 'r+');
+    fwrite($buf, $csvContent);
+    rewind($buf);
+
+    $header = fgetcsv($buf, escape: '\\');
+    if ($header === false) {
+        $result['errors'][] = 'Empty file.';
+        fclose($buf);
+        return $result;
+    }
+
+    $firstCol = $header[0];
+    if ($firstCol === 'occurred_at_utc') {
+        $format       = 'native';
+        $requiredCols = ['occurred_at_utc', 'duration_seconds', 'stool_type', 'note'];
+    } elseif ($firstCol === 'Date') {
+        $format       = 'poopify';
+        $requiredCols = ['Date', 'Time', 'There was stool', 'Consistency', 'Time on toilet', 'Extra notes'];
+    } else {
+        $result['errors'][] = "Unrecognized CSV format (first column: \"$firstCol\").";
+        fclose($buf);
+        return $result;
+    }
+
+    $missing = array_diff($requiredCols, $header);
+    if ($missing) {
+        $result['errors'][] = 'Missing required columns: ' . implode(', ', array_values($missing)) . '.';
+        fclose($buf);
+        return $result;
+    }
+
+    $colIdx = array_flip($header);
+    $rowNum = 1;
+
+    while (($row = fgetcsv($buf, escape: '\\')) !== false) {
+        $rowNum++;
+
+        $normalized = $format === 'native'
+            ? normalize_native_row($row, $colIdx, $rowNum)
+            : normalize_poopify_row($row, $colIdx, $rowNum, $timezone);
+
+        if ($normalized === null) {
+            continue;
+        }
+        if (is_string($normalized)) {
+            $result['errors'][] = $normalized;
+            continue;
+        }
+
+        $stmt = DB::execute(
+            'INSERT OR IGNORE INTO entries (user_id, occurred_at, duration_seconds, stool_type, note)
+             VALUES (?, ?, ?, ?, ?)',
+            [$userId, $normalized['occurred_at'], $normalized['duration_seconds'],
+             $normalized['stool_type'], $normalized['note']]
+        );
+
+        if ($stmt->rowCount() === 0) {
+            $result['skipped_duplicates']++;
+        } else {
+            $result['imported']++;
+        }
+    }
+
+    fclose($buf);
+    return $result;
+}
