@@ -98,17 +98,105 @@ $errors = $errors ?? [];
 </div>
 
 <script>
-function resetForm() {
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const local = now.getFullYear() + '-' +
-        pad(now.getMonth()+1) + '-' +
-        pad(now.getDate()) + 'T' +
-        pad(now.getHours()) + ':' +
-        pad(now.getMinutes());
-    document.querySelector('[name="occurred_at"]').value = local;
-    document.querySelector('[name="duration"]').value = '05:00';
-    document.querySelector('[name="note"]').value = '';
-    selectType(4);
-}
+(function () {
+    var TIMER_KEY = 'gistats_timer_start';
+    var durationInput = document.querySelector('[name="duration"]');
+    var timerBtn = document.getElementById('timer-btn');
+
+    function formatDuration(seconds) {
+        if (seconds < 3600) {
+            var m = Math.floor(seconds / 60);
+            var s = seconds % 60;
+            return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        }
+        var h = Math.floor(seconds / 3600);
+        var m = Math.floor((seconds % 3600) / 60);
+        var s = seconds % 60;
+        return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function isTimerRunning() {
+        return !!localStorage.getItem(TIMER_KEY);
+    }
+
+    function updateTimerDisplay() {
+        var start = parseInt(localStorage.getItem(TIMER_KEY), 10);
+        if (!start || !durationInput) return;
+        var elapsed = Math.floor((Date.now() - start) / 1000);
+        durationInput.value = formatDuration(elapsed);
+    }
+
+    function stopTimer() {
+        clearInterval(window.gistatsTimerInterval);
+        window.gistatsTimerInterval = null;
+        localStorage.removeItem(TIMER_KEY);
+        if (durationInput) {
+            durationInput.readOnly = false;
+            durationInput.classList.remove('duration-readonly');
+        }
+        if (timerBtn) timerBtn.textContent = '|>';
+    }
+
+    function captureAndStopTimer() {
+        updateTimerDisplay();
+        stopTimer();
+    }
+
+    function startTimer() {
+        localStorage.setItem(TIMER_KEY, Date.now().toString());
+        if (durationInput) {
+            durationInput.readOnly = true;
+            durationInput.classList.add('duration-readonly');
+        }
+        if (timerBtn) timerBtn.textContent = '[]';
+        updateTimerDisplay();
+        window.gistatsTimerInterval = setInterval(updateTimerDisplay, 1000);
+    }
+
+    window.toggleTimer = function () {
+        if (isTimerRunning()) {
+            captureAndStopTimer();
+        } else {
+            startTimer();
+        }
+    };
+
+    // Resume timer if one was running before this render
+    if (window.gistatsTimerInterval) {
+        clearInterval(window.gistatsTimerInterval);
+        window.gistatsTimerInterval = null;
+    }
+    if (isTimerRunning()) {
+        if (durationInput) {
+            durationInput.readOnly = true;
+            durationInput.classList.add('duration-readonly');
+        }
+        if (timerBtn) timerBtn.textContent = '[]';
+        updateTimerDisplay();
+        window.gistatsTimerInterval = setInterval(updateTimerDisplay, 1000);
+    }
+
+    // Capture duration before HTMX POSTs the form
+    var form = document.getElementById('entry-form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            if (isTimerRunning()) captureAndStopTimer();
+        });
+    }
+
+    window.resetForm = function () {
+        if (isTimerRunning()) captureAndStopTimer();
+        var now = new Date();
+        var pad = function (n) { return String(n).padStart(2, '0'); };
+        var local = now.getFullYear() + '-' +
+            pad(now.getMonth() + 1) + '-' +
+            pad(now.getDate()) + 'T' +
+            pad(now.getHours()) + ':' +
+            pad(now.getMinutes());
+        document.querySelector('[name="occurred_at"]').value = local;
+        document.querySelector('[name="duration"]').value = '05:00';
+        document.querySelector('[name="note"]').value = '';
+        selectType(4);
+    };
+}());
 </script>
