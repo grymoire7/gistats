@@ -38,6 +38,8 @@ class DB
             );
             CREATE INDEX IF NOT EXISTS idx_entries_user_occurred
                 ON entries(user_id, occurred_at DESC);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_entries_user_occurred_unique
+                ON entries(user_id, occurred_at);
         ');
     }
 

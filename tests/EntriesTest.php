@@ -129,7 +129,10 @@ class EntriesTest extends TestCase
     public function testGetEntriesPagination(): void
     {
         for ($i = 0; $i < 5; $i++) {
-            create_entry($this->userId, ['occurred_at' => '2026-05-12T14:00:00', 'stool_type' => 4], $this->tz);
+            create_entry($this->userId, [
+                'occurred_at' => sprintf('2026-05-12T%02d:00:00', 10 + $i),
+                'stool_type'  => 4,
+            ], $this->tz);
         }
         $page1 = get_entries($this->userId, 0, 3);
         $page2 = get_entries($this->userId, 3, 3);
@@ -157,7 +160,10 @@ class EntriesTest extends TestCase
     public function testCountEntries(): void
     {
         for ($i = 0; $i < 4; $i++) {
-            create_entry($this->userId, ['occurred_at' => '2026-05-12T14:00:00', 'stool_type' => 4], $this->tz);
+            create_entry($this->userId, [
+                'occurred_at' => sprintf('2026-05-12T%02d:00:00', 10 + $i),
+                'stool_type'  => 4,
+            ], $this->tz);
         }
         $this->assertEquals(4, count_entries($this->userId));
     }
