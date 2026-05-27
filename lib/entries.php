@@ -179,7 +179,7 @@ function normalize_poopify_row(array $row, array $colIdx, int $rowNum, string $t
     return [
         'occurred_at'      => $occurredAt,
         'stool_type'       => $consistencyMap[$consistency],
-        'duration_seconds' => $timeOnToilet !== '' ? (int) $timeOnToilet * 60 : null,
+        'duration_seconds' => $timeOnToilet !== '' ? (int) ($timeOnToilet * 60) : null,
         'note'             => $extraNotes !== '' ? $extraNotes : null,
     ];
 }
