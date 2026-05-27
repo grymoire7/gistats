@@ -167,4 +167,37 @@ class EntriesTest extends TestCase
         }
         $this->assertEquals(4, count_entries($this->userId));
     }
+
+    public function testCreateEntryReturnsNullOnDuplicateTimestamp(): void
+    {
+        create_entry($this->userId, [
+            'occurred_at' => '2026-05-27T12:00:00',
+            'stool_type'  => 4,
+        ], $this->tz);
+        $id = create_entry($this->userId, [
+            'occurred_at' => '2026-05-27T12:00:00',
+            'stool_type'  => 4,
+        ], $this->tz);
+        $this->assertNull($id);
+    }
+
+    public function testUpdateEntryReturnsNullOnConflictingTimestamp(): void
+    {
+        $id1 = create_entry($this->userId, [
+            'occurred_at' => '2026-05-27T12:00:00',
+            'stool_type'  => 4,
+        ], $this->tz);
+        $id2 = create_entry($this->userId, [
+            'occurred_at' => '2026-05-27T13:00:00',
+            'stool_type'  => 4,
+        ], $this->tz);
+        $ok = update_entry($id2, $this->userId, [
+            'occurred_at' => '2026-05-27T12:00:00', // conflicts with id1
+            'stool_type'  => 4,
+        ], $this->tz);
+        $this->assertNull($ok);
+        // original entry is unchanged
+        $row = get_entry($id2, $this->userId);
+        $this->assertEquals('2026-05-27T17:00:00Z', $row['occurred_at']);
+    }
 }

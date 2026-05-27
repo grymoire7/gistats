@@ -98,12 +98,21 @@ $router->post('/entries', function () use ($config) {
         return;
     }
 
-    create_entry($userId, [
+    $newId = create_entry($userId, [
         'occurred_at' => $_POST['occurred_at'],
         'duration'    => $_POST['duration'] ?? '',
         'stool_type'  => (int) $_POST['stool_type'],
         'note'        => trim($_POST['note'] ?? ''),
     ], $tz);
+
+    if ($newId === null && !empty($_SERVER['HTTP_HX_REQUEST'])) {
+        $entry = null;
+        ob_start(); include __DIR__ . '/views/partials/entry-form.php'; $formHtml = ob_get_clean();
+        ob_start(); $flash_type = 'error'; $flash_message = 'An entry already exists at this time.'; include __DIR__ . '/views/partials/flash.php'; $flashHtml = ob_get_clean();
+        echo $formHtml;
+        echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
+        return;
+    }
 
     // Return blank form + flash message for HTMX; redirect for non-HTMX
     if (!empty($_SERVER['HTTP_HX_REQUEST'])) {
@@ -236,12 +245,21 @@ $router->post('/entries/:id', function (string $id) use ($config) {
         return;
     }
 
-    update_entry((int) $id, $userId, [
+    $updateResult = update_entry((int) $id, $userId, [
         'occurred_at' => $_POST['occurred_at'],
         'duration'    => $_POST['duration'] ?? '',
         'stool_type'  => (int) $_POST['stool_type'],
         'note'        => trim($_POST['note'] ?? ''),
     ], $tz);
+
+    if ($updateResult === null && !empty($_SERVER['HTTP_HX_REQUEST'])) {
+        $entry = array_merge($row, ['is_edit' => true]);
+        ob_start(); include __DIR__ . '/views/partials/entry-form.php'; $formHtml = ob_get_clean();
+        ob_start(); $flash_type = 'error'; $flash_message = 'An entry already exists at this time.'; include __DIR__ . '/views/partials/flash.php'; $flashHtml = ob_get_clean();
+        echo $formHtml;
+        echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
+        return;
+    }
 
     if (!empty($_SERVER['HTTP_HX_REQUEST'])) {
         $entry = null;

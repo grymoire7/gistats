@@ -3,31 +3,38 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 
-function create_entry(int $userId, array $data, string $timezone): int
-{
-    $occurredAt  = to_utc($data['occurred_at'], $timezone);
-    $durationSec = isset($data['duration']) && $data['duration'] !== ''
-        ? duration_to_seconds($data['duration'])
-        : null;
-    DB::execute(
-        'INSERT INTO entries (user_id, occurred_at, duration_seconds, stool_type, note)
-         VALUES (?, ?, ?, ?, ?)',
-        [$userId, $occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null]
-    );
-    return (int) DB::lastInsertId();
-}
-
-function update_entry(int $id, int $userId, array $data, string $timezone): bool
+function create_entry(int $userId, array $data, string $timezone): ?int
 {
     $occurredAt  = to_utc($data['occurred_at'], $timezone);
     $durationSec = isset($data['duration']) && $data['duration'] !== ''
         ? duration_to_seconds($data['duration'])
         : null;
     $stmt = DB::execute(
-        'UPDATE entries SET occurred_at=?, duration_seconds=?, stool_type=?, note=?
-         WHERE id=? AND user_id=?',
-        [$occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null, $id, $userId]
+        'INSERT OR IGNORE INTO entries (user_id, occurred_at, duration_seconds, stool_type, note)
+         VALUES (?, ?, ?, ?, ?)',
+        [$userId, $occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null]
     );
+    return $stmt->rowCount() > 0 ? (int) DB::lastInsertId() : null;
+}
+
+function update_entry(int $id, int $userId, array $data, string $timezone): ?bool
+{
+    $occurredAt  = to_utc($data['occurred_at'], $timezone);
+    $durationSec = isset($data['duration']) && $data['duration'] !== ''
+        ? duration_to_seconds($data['duration'])
+        : null;
+    try {
+        $stmt = DB::execute(
+            'UPDATE entries SET occurred_at=?, duration_seconds=?, stool_type=?, note=?
+             WHERE id=? AND user_id=?',
+            [$occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null, $id, $userId]
+        );
+    } catch (\PDOException $e) {
+        if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+            return null;
+        }
+        throw $e;
+    }
     return $stmt->rowCount() > 0;
 }
 
