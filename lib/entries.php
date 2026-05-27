@@ -144,6 +144,46 @@ function normalize_native_row(array $row, array $colIdx, int $rowNum): array|str
     ];
 }
 
+function normalize_poopify_row(array $row, array $colIdx, int $rowNum, string $timezone): array|string|null
+{
+    static $consistencyMap = [
+        'Separated hard lumps'                 => 1,
+        'Lumpy and sausage like'               => 2,
+        'Sausage shaped with cracks'           => 3,
+        'Like a smooth, soft sausage or snake' => 4,
+        'Soft blobs, with clear-cut edges'     => 5,
+        'Mushy consistency with ragged edges'  => 6,
+        'Liquid, with no solid pieces'         => 7,
+    ];
+
+    if (($row[$colIdx['There was stool']] ?? '') !== 'Yes') {
+        return null;
+    }
+
+    $consistency = $row[$colIdx['Consistency']] ?? '';
+    if (!array_key_exists($consistency, $consistencyMap)) {
+        return "Row $rowNum: unrecognized consistency \"$consistency\".";
+    }
+
+    $date = $row[$colIdx['Date']] ?? '';
+    $time = $row[$colIdx['Time']] ?? '';
+    try {
+        $occurredAt = to_utc("$date $time", $timezone);
+    } catch (\Exception $e) {
+        return "Row $rowNum: invalid date/time \"$date $time\".";
+    }
+
+    $timeOnToilet = $row[$colIdx['Time on toilet']] ?? '';
+    $extraNotes   = $row[$colIdx['Extra notes']] ?? '';
+
+    return [
+        'occurred_at'      => $occurredAt,
+        'stool_type'       => $consistencyMap[$consistency],
+        'duration_seconds' => $timeOnToilet !== '' ? (int) $timeOnToilet * 60 : null,
+        'note'             => $extraNotes !== '' ? $extraNotes : null,
+    ];
+}
+
 function import_csv(int $userId, string $csvContent, string $timezone): array
 {
     $result = ['imported' => 0, 'skipped_duplicates' => 0, 'errors' => []];
