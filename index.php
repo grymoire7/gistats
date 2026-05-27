@@ -341,6 +341,31 @@ $router->get('/export', function () use ($config) {
     exit;
 });
 
+$router->get('/import', function () use ($config) {
+    require_auth();
+    render('import');
+});
+
+$router->post('/import', function () use ($config) {
+    require_auth();
+    require_csrf();
+    $tz = $config['timezone'];
+
+    if (empty($_FILES['csv_file']['tmp_name']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        render('import', ['error' => 'No file uploaded or upload error.']);
+        return;
+    }
+
+    $csvContent = file_get_contents($_FILES['csv_file']['tmp_name']);
+    if ($csvContent === false || trim($csvContent) === '') {
+        render('import', ['error' => 'The uploaded file is empty.']);
+        return;
+    }
+
+    $result = import_csv(current_user_id(), $csvContent, $tz);
+    render('import', ['result' => $result]);
+});
+
 $router->get('/about', function () use ($config) {
     render('about');
 });
