@@ -22,6 +22,11 @@ rodney waitload
 rodney visible '#entry-form-wrap'
 echo "PASS: logged in (home page loaded)"
 
+# Defensive: clear any stale timer state left by previous tests, then reload so UI state is clean
+rodney js "localStorage.removeItem('gistats_timer_start')"
+rodney open "$BASE_URL"
+rodney waitload
+
 rodney click "#timer-btn"
 rodney assert "document.getElementById('timer-btn').textContent === '[]'"
 rodney assert "document.querySelector('[name=\"duration\"]').readOnly === true"

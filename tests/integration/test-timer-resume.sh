@@ -30,4 +30,7 @@ rodney assert "document.querySelector('[name=\"duration\"]').readOnly === true"
 rodney assert "localStorage.getItem('gistats_timer_start') !== null"
 echo "PASS: timer resumes after page reload"
 
+# Clean up so stale timer state doesn't leak into subsequent tests via shared Chrome profile
+rodney js "localStorage.removeItem('gistats_timer_start')"
+
 echo "ALL PASS"
