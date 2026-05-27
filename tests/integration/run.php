@@ -19,14 +19,14 @@ DB::execute(
 DB::reset();
 
 // ── Start server ──────────────────────────────────────────────────────────
-putenv("GISTATS_DB_PATH={$dbPath}");
-
 $routerScript = __DIR__ . '/server-router.php';
+$serverEnv    = array_merge(getenv(), ['GISTATS_DB_PATH' => $dbPath]);
 $serverProc   = proc_open(
     ['php', '-S', "localhost:{$port}", $routerScript],
     [STDIN, ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']],
     $pipes,
-    $projectRoot
+    $projectRoot,
+    $serverEnv
 );
 
 if (!is_resource($serverProc)) {
