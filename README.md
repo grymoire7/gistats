@@ -56,22 +56,15 @@ npm run test:syntax    # check PHP syntax on all tracked files
 ### Integration tests
 
 Browser integration tests live in `tests/integration/` and use the `rodney`
-browser automation tool. They require a running dev server and valid credentials.
+browser automation tool.
 
 ```bash
-npm run server:start   # start the dev server first
-
-GISTATS_URL=http://localhost:8000 \
-GISTATS_USER=<username> \
-GISTATS_PASS=<password> \
-bash tests/integration/test-offline-banner.sh
-
-bash tests/integration/test-offline-queue.sh   # same env vars
-bash tests/integration/test-offline-sync.sh    # same env vars
+php tests/integration/run.php
 ```
 
-`GISTATS_URL`, `GISTATS_USER`, and `GISTATS_PASS` default to
-`http://localhost:8000`, `admin`, and `secret` respectively.
+The runner spins up an isolated PHP server backed by a temporary database,
+runs all `test-*.sh` scripts, then tears everything down. The development
+database is never touched.
 
 ---
 
