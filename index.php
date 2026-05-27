@@ -116,9 +116,16 @@ $router->post('/entries', function () use ($config) {
         $hasMore    = count($entries) >= 30 && $total > 30;
         $nextOffset = 30;
         ob_start(); include __DIR__ . '/views/partials/event-list.php'; $listHtml = ob_get_clean();
+        $now   = new DateTime('now', new DateTimeZone($tz));
+        $year  = (int) $now->format('Y');
+        $month = (int) $now->format('n');
+        $monthEntries = get_entries_for_month($userId, $year, $month, $tz);
+        $calendar     = build_calendar($year, $month, $monthEntries, $tz);
+        ob_start(); include __DIR__ . '/views/partials/calendar.php'; $calendarHtml = ob_get_clean();
         echo $formHtml;
         echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
         echo '<div id="entries-wrap" hx-swap-oob="true">' . $listHtml . '</div>';
+        echo '<div id="calendar-wrap" hx-swap-oob="true">' . $calendarHtml . '</div>';
     } else {
         header('Location: /');
         exit;
@@ -246,9 +253,16 @@ $router->post('/entries/:id', function (string $id) use ($config) {
         $hasMore    = count($entries) >= 30 && $total > 30;
         $nextOffset = 30;
         ob_start(); include __DIR__ . '/views/partials/event-list.php'; $listHtml = ob_get_clean();
+        $now   = new DateTime('now', new DateTimeZone($tz));
+        $year  = (int) $now->format('Y');
+        $month = (int) $now->format('n');
+        $monthEntries = get_entries_for_month($userId, $year, $month, $tz);
+        $calendar     = build_calendar($year, $month, $monthEntries, $tz);
+        ob_start(); include __DIR__ . '/views/partials/calendar.php'; $calendarHtml = ob_get_clean();
         echo $formHtml;
         echo '<div id="flash-area" hx-swap-oob="true">' . $flashHtml . '</div>';
         echo '<div id="entries-wrap" hx-swap-oob="true">' . $listHtml . '</div>';
+        echo '<div id="calendar-wrap" hx-swap-oob="true">' . $calendarHtml . '</div>';
     } else {
         header('Location: /');
         exit;
