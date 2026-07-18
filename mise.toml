@@ -1,0 +1,15 @@
+[tasks.build]
+description = "Minify the compiled Tailwind CSS"
+run = "npm run build:css"
+
+[tasks.test]
+description = "Run the PHPUnit suite"
+run = "npm test"
+
+[tasks.lint]
+description = "PHP syntax check across all tracked PHP files"
+run = "npm run test:syntax"
+
+[tasks."integration-test"]
+description = "Spin up an isolated PHP server and run browser-automated integration tests"
+run = "php tests/integration/run.php"
