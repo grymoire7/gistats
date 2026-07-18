@@ -1,124 +1,16 @@
 # GI Stats
 
-Personal GI health tracker using the Bristol Stool Scale. Log bowel movements,
-view trends on a calendar, track statistics over time, and export your data as
-CSV.
-
-**Tech stack:** PHP 8+, SQLite, HTMX v2, Tailwind CSS v4, Chart.js v4
+A personal GI health tracker built around the Bristol Stool Scale.
 
 ---
 
-## First-time setup
+## Overview
 
-**Requirements:** PHP 8+, Composer, Node.js
+Log bowel movements, view trends on a calendar, track statistics over time, and export your data as CSV. Sign in and open Export CSV in the nav drawer, or visit `/export` directly. The download includes UTC timestamps, local timestamps, duration in seconds, Bristol stool type, and notes.
 
-```bash
-composer install
-npm install
-npm run build:css
-```
+### Project structure
 
-Create the database and your user account:
-
-```bash
-php seed.php
-```
-
-The script will prompt for a username and password. It creates the SQLite
-database at `database.sqlite` and applies the schema.
-
----
-
-## Running locally
-
-```bash
-npm run server:start
-```
-
-Open `http://localhost:8000` and sign in with the credentials you set up above.
-
-To rebuild CSS after editing `css/input.css`:
-
-```bash
-npm run build:css      # one-shot
-npm run watch:css      # watch mode
-```
-
----
-
-## Testing
-
-```bash
-npm test               # run PHPUnit suite
-npm run test:syntax    # check PHP syntax on all tracked files
-```
-
-### Integration tests
-
-Browser integration tests live in `tests/integration/` and use the `rodney`
-browser automation tool.
-
-```bash
-php tests/integration/run.php
-```
-
-The runner spins up an isolated PHP server backed by a temporary database,
-runs all `test-*.sh` scripts, then tears everything down. The development
-database is never touched.
-
----
-
-## Configuration
-
-Edit `config.php` to change defaults:
-
-| Key        | Default            | Description                                   |
-| ---------- | ------------------ | --------------------------------------------- |
-| `db_path`  | `database.sqlite`  | Path to the SQLite database file              |
-| `timezone` | `America/New_York` | Local timezone for display and date filtering |
-| `base_url` | `''`               | URL prefix if deployed at a sub-path          |
-
----
-
-## Admin tasks
-
-**Add or reset a user password:**
-
-```bash
-php seed.php
-```
-
-The script uses `INSERT OR REPLACE`, so running it again with the same username
-updates the password.
-
-**Export all data as CSV:**
-
-Navigate to **Export CSV** in the nav drawer while signed in, or visit
-`/export` directly. The download includes UTC timestamps, local timestamps,
-duration in seconds, Bristol stool type, and notes.
-
-**Wipe and recreate the database:**
-
-```bash
-rm database.sqlite
-php seed.php
-```
-
----
-
-## Deploying with Apache
-
-Copy the project directory to your web root. The `.htaccess` file routes all
-requests through `index.php`. Ensure `mod_rewrite` is enabled and
-`AllowOverride All` is set for the directory.
-
-Set `base_url` in `config.php` if deploying at a sub-path (e.g. `'/gi'`).
-
----
-
-## Project structure
-
-```
+```text
 ├── index.php          # Entry point: routes and render() helper
 ├── config.php         # Runtime configuration
 ├── router.php         # Simple pattern-matching router
@@ -145,3 +37,83 @@ Set `base_url` in `config.php` if deploying at a sub-path (e.g. `'/gi'`).
 └── tests/             # PHPUnit test suite
 ```
 
+---
+
+## Stack
+
+PHP 8+, SQLite, HTMX v2, Tailwind CSS v4, Chart.js v4
+
+---
+
+## Setup
+
+**Requirements:** PHP 8+, Composer, Node.js
+
+```bash
+composer install
+npm install
+npm run build:css
+```
+
+Create the database and your user account:
+
+```bash
+php seed.php
+```
+
+The script prompts for a username and password, creates the SQLite database at `database.sqlite`, and applies the schema. Run it again with the same username to reset that user's password, since it uses `INSERT OR REPLACE`.
+
+To wipe and recreate the database:
+
+```bash
+rm database.sqlite
+php seed.php
+```
+
+### Configuring the app
+
+Edit `config.php` to change defaults:
+
+| Key        | Default             | Description                                    |
+| ---------- | ------------------- | ----------------------------------------------- |
+| `db_path`  | `database.sqlite`   | Path to the SQLite database file                |
+| `timezone` | `America/New_York`  | Local timezone for display and date filtering    |
+| `base_url` | `''`                | URL prefix if deployed at a sub-path             |
+
+### Deploying with Apache
+
+Copy the project directory to your web root. The `.htaccess` file routes all requests through `index.php`. Make sure `mod_rewrite` is enabled and `AllowOverride All` is set for the directory.
+
+Set `base_url` in `config.php` if deploying at a sub-path (e.g. `/gi`).
+
+---
+
+## Tasks
+
+Run `pitchfork start` to run the app locally. It starts two daemons:
+
+- `web`: serves the app with PHP's built-in server at `http://localhost:8000`.
+- `assets`: watches `css/input.css` and rebuilds the compiled Tailwind CSS on changes.
+
+Open `http://localhost:8000` and sign in with the credentials you set up in Setup.
+
+Other tasks, defined in `mise.toml`:
+
+- `mise run build`: minify the compiled Tailwind CSS.
+- `mise run test`: run the PHPUnit suite.
+- `mise run lint`: PHP syntax check across all tracked PHP files.
+- `mise run integration-test`: spin up an isolated PHP server and run browser-automated integration tests.
+
+Integration tests live in `tests/integration/` and use the `rodney` browser automation tool. The task spins up an isolated PHP server backed by a temporary database, runs every `test-*.sh` script, then tears everything down. Your development database is never touched.
+
+---
+
+## Documentation
+
+See [DESIGN.md](DESIGN.md) for the visual design system, and [docs/](docs) for feature plans and specs.
+
+---
+
+## License
+
+[MIT](LICENSE)
