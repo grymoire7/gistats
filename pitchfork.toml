@@ -1,0 +1,12 @@
+#:schema https://pitchfork.jdx.dev/schema.json
+
+[daemons.web]
+run = "exec php -S localhost:8000 server.php"
+port = { expect = [8000], bump = false }
+ready_http = { url = "http://localhost:8000/", status = [200] }
+
+[daemons.assets]
+# tailwindcss --watch exits immediately on stdin EOF; pitchfork gives daemons
+# a closed stdin, so keep it open with an endless stream from /dev/zero.
+run = "exec npm run watch:css < /dev/zero"
+ready_delay = 2
