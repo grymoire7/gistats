@@ -610,7 +610,128 @@ git commit -m "feat: add urgency toggle to entry form"
 
 ---
 
-### Task 6: Entries list indicator
+### Task 6: Wire urgency through router POST handlers
+
+> **Plan amendment (post-Task-5):** The original plan omitted `index.php` (the router) entirely — Tasks 2's `create_entry`/`update_entry` accept `$data['urgency']`, and Task 5 submits `name="urgency"` in the form, but nothing in the original plan copied `$_POST['urgency']` into the data array the router builds. Task 5's implementer caught this: the toggle currently has no effect on save. This task closes that gap.
+
+**Files:**
+- Modify: `index.php` (POST `/entries` handler ~lines 101-106, POST `/entries/:id` handler ~lines 248-253)
+- Test: `tests/integration/test-urgency-toggle.sh` (new)
+
+**Interfaces:**
+- Consumes: `create_entry(int $userId, array $data, string $timezone): ?int` / `update_entry(int $id, int $userId, array $data, string $timezone): ?bool` from Task 2 — both already accept `$data['urgency']` and cast truthy values to `1`.
+- Consumes: form field `name="urgency"` (hidden input, value `"0"`/`"1"`) from Task 5's `views/partials/entry-form.php`.
+- Consumes: the project's `rodney`-based browser integration test harness (`tests/integration/run.php`, which globs `tests/integration/test-*.sh` and runs each against a live `php -S` server with a fresh SQLite DB — see `tests/integration/test-calendar-updates-on-entry.sh` for the reference pattern: `rodney start --local`, `rodney open`, `rodney input`, `rodney click`, `rodney js`, `rodney assert`).
+
+- [ ] **Step 1: Write the failing integration test**
+
+Create `tests/integration/test-urgency-toggle.sh`:
+
+```bash
+#!/usr/bin/env bash
+# Tests: urgency toggle on the entry form persists through create and edit
+set -euo pipefail
+
+BASE_URL="${GISTATS_URL:-http://localhost:8000}"
+USERNAME="${GISTATS_USER:-admin}"
+PASSWORD="${GISTATS_PASS:-secret}"
+
+echo "=== test-urgency-toggle ==="
+
+rodney start --local
+trap 'rodney stop --local' EXIT
+
+rodney open "$BASE_URL/login"
+rodney waitload
+rodney input '[name="username"]' "$USERNAME"
+rodney input '[name="password"]' "$PASSWORD"
+rodney click '[type="submit"]'
+rodney waitload
+
+rodney visible '#entry-form-wrap'
+echo "PASS: logged in (home page loaded)"
+
+# Default state: green, off
+rodney assert "document.getElementById('urgency-input').value" "0"
+rodney assert "document.getElementById('urgency-btn').classList.contains('active')" "false"
+echo "PASS: urgency toggle defaults to off"
+
+# Toggle on, then submit a new entry
+rodney click '#urgency-btn'
+rodney assert "document.getElementById('urgency-input').value" "1"
+rodney assert "document.getElementById('urgency-btn').classList.contains('active')" "true"
+echo "PASS: toggle switches to on (active class, hidden input = 1)"
+
+NOW=$(date '+%Y-%m-%dT%H:%M')
+rodney js "document.querySelector('[name=\"occurred_at\"]').value = '$NOW'"
+rodney js "document.getElementById('stool-type-input').value = '4'"
+rodney click 'button.btn-primary'
+rodney sleep 0.5
+echo "PASS: submitted entry with urgency on"
+
+# Edit the entry back open and confirm the toggle pre-loads as on
+rodney click '.btn-outline'
+rodney sleep 0.3
+rodney assert "document.getElementById('urgency-input').value" "1"
+rodney assert "document.getElementById('urgency-btn').classList.contains('active')" "true"
+echo "PASS: edit form pre-loads urgency as on"
+
+echo "ALL PASS"
+```
+
+Make it executable: `chmod +x tests/integration/test-urgency-toggle.sh`
+
+- [ ] **Step 2: Run the integration suite to verify the new test fails**
+
+Run: `php tests/integration/run.php`
+Expected: `test-urgency-toggle` fails at the "PASS: submitted entry with urgency on" step or later — the router doesn't persist `urgency`, so re-opening the edit form will show the toggle back at `0`/off. (All other integration tests continue to pass.)
+
+- [ ] **Step 3: Implement**
+
+In `index.php`, the POST `/entries` handler — add `'urgency'` to the `create_entry()` call's data array:
+
+```php
+    $newId = create_entry($userId, [
+        'occurred_at' => $_POST['occurred_at'],
+        'duration'    => $_POST['duration'] ?? '',
+        'stool_type'  => (int) $_POST['stool_type'],
+        'note'        => trim($_POST['note'] ?? ''),
+        'urgency'     => $_POST['urgency'] ?? '0',
+    ], $tz);
+```
+
+In `index.php`, the POST `/entries/:id` handler — add `'urgency'` to the `update_entry()` call's data array:
+
+```php
+    $updateResult = update_entry((int) $id, $userId, [
+        'occurred_at' => $_POST['occurred_at'],
+        'duration'    => $_POST['duration'] ?? '',
+        'stool_type'  => (int) $_POST['stool_type'],
+        'note'        => trim($_POST['note'] ?? ''),
+        'urgency'     => $_POST['urgency'] ?? '0',
+    ], $tz);
+```
+
+- [ ] **Step 4: Run the integration suite to verify it passes**
+
+Run: `php tests/integration/run.php`
+Expected: `All N integration test(s) passed.` (existing tests plus `test-urgency-toggle`, no regressions)
+
+- [ ] **Step 5: Run the full PHPUnit suite as a regression check**
+
+Run: `vendor/bin/phpunit`
+Expected: PASS, no regressions (this task doesn't touch `lib/`, but confirms nothing else broke)
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add index.php tests/integration/test-urgency-toggle.sh
+git commit -m "fix: persist urgency flag from entry form submissions"
+```
+
+---
+
+### Task 7: Entries list indicator
 
 **Files:**
 - Modify: `views/partials/event-rows.php` (lines 9-33)
@@ -657,7 +778,7 @@ git commit -m "feat: show urgency badge in entries list"
 
 ---
 
-### Task 7: Full regression pass
+### Task 8: Full regression pass
 
 **Files:** None (verification only)
 
@@ -675,3 +796,8 @@ Expected: `No syntax errors detected` for every file, no output containing `Erro
 
 Run: `npm run build:css && git status --porcelain css/compiled.css`
 Expected: empty output (no uncommitted diff) — if there's a diff, stage and commit it.
+
+- [ ] **Step 4: Run the full browser integration suite**
+
+Run: `php tests/integration/run.php`
+Expected: `All N integration test(s) passed.` — includes `test-urgency-toggle.sh` from Task 6 plus all pre-existing integration tests (timer, offline queue, calendar), confirming no regressions in the interactive JS this feature touched (the button-row layout change in Task 5, the toggle script).
