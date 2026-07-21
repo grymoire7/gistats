@@ -23,3 +23,56 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit
+
+  deploy:
+    needs: test
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Install production PHP dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install and build CSS
+        run: |
+          npm ci
+          npm run build:css
+
+      - name: Stage production files
+        run: |
+          mkdir -p dist
+          rsync -a ./ dist/ \
+            --include '.htaccess' \
+            --exclude '.*' \
+            --exclude tests/ \
+            --exclude seed.php \
+            --exclude server.php \
+            --exclude docs/ \
+            --exclude tmp/ \
+            --exclude css/input.css \
+            --exclude '*.md' \
+            --exclude phpunit.xml \
+            --exclude composer.json \
+            --exclude composer.lock \
+            --exclude 'package*.json' \
+            --exclude node_modules/ \
+            --exclude dist/
+
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.DREAMHOST_USERNAME }}
+          server: ${{ secrets.DREAMHOST_HOST }}
+          password: ${{ secrets.DREAMHOST_PASSWORD }}
+          local_path: './dist/*'
+          remote_path: '/home/ccshell/magicbydesign.com/gistats/'
+          delete_remote_files: false
