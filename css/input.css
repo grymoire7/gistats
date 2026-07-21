@@ -6,6 +6,7 @@
     --color-border:    #3a3a3a;
     --color-green:     #00754A;
     --color-green-hd:  #006241;
+    --color-orange:    #E64A19;
     --color-text:      rgba(255,255,255,0.87);
     --color-muted:     rgba(255,255,255,0.55);
     --color-red:       #c82014;
@@ -53,6 +54,23 @@ body {
     padding: 4px 12px;
     font-size: 12px;
     cursor: pointer;
+}
+
+.btn-urgency {
+    background: var(--color-green);
+    color: #fff;
+    border: 1px solid var(--color-green);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn-urgency:active { transform: scale(0.95); }
+.btn-urgency.active {
+    background: var(--color-orange);
+    border-color: var(--color-orange);
 }
 
 .card {
