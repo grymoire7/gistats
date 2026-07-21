@@ -64,6 +64,8 @@ jobs:
             --exclude composer.json \
             --exclude composer.lock \
             --exclude 'package*.json' \
+            --exclude mise.toml \
+            --exclude pitchfork.toml \
             --exclude node_modules/ \
             --exclude dist/
 
