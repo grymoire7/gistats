@@ -13,6 +13,7 @@ foreach ($entries as $row):
     $type     = (int) $row['stool_type'];
     $duration = $row['duration_seconds'] ? seconds_to_duration((int)$row['duration_seconds']) : '—';
     $note     = $row['note'] ? mb_strimwidth($row['note'], 0, 40, '…') : '';
+    $urgent   = !empty($row['urgency']);
     $id       = (int) $row['id'];
 ?>
 <tr id="entry-<?= $id ?>" style="border-bottom:1px solid var(--color-border);">
@@ -26,7 +27,7 @@ foreach ($entries as $row):
              style="width:32px;height:auto;border-radius:3px;">
     </td>
     <td style="padding:10px 4px;font-size:12px;color:var(--color-muted);">
-        <?= htmlspecialchars($duration) ?>
+        <?= htmlspecialchars($duration) ?><?php if ($urgent): ?> <span title="Urgent">🫪</span><?php endif; ?>
         <?php if ($note): ?>
         <div style="color:var(--color-muted);"><?= htmlspecialchars($note) ?></div>
         <?php endif; ?>
