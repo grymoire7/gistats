@@ -86,6 +86,45 @@ Copy the project directory to your web root. The `.htaccess` file routes all req
 
 Set `base_url` in `config.php` if deploying at a sub-path (e.g. `/gi`).
 
+### Deploying with GitHub Actions
+
+Pushing to `main` runs a two-job pipeline (`.github/workflows/deploy.yml`):
+
+- **`test`** — runs on every push and pull request: PHP syntax lint, then `vendor/bin/phpunit`.
+- **`deploy`** — runs only on push to `main` (or manual `workflow_dispatch`), and only if `test` passes. Builds production dependencies and compiled CSS, stages a filtered copy of the repo into `dist/`, and SFTPs it to DreamHost.
+
+**Required GitHub secrets** (repo Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+| --- | --- |
+| `DREAMHOST_HOST` | DreamHost SFTP host |
+| `DREAMHOST_USERNAME` | DreamHost SFTP username |
+| `DREAMHOST_PASSWORD` | DreamHost SFTP password |
+
+**One-time server setup**, via SSH:
+
+```bash
+mkdir -p ~/data/gitstats
+```
+
+After the first deploy creates the `gistats/` web directory, place `~/magicbydesign.com/gistats/config.local.php` on the server:
+
+```php
+<?php return [
+    'base_url' => '/gistats',
+    'db_path'  => '/home/ccshell/data/gitstats/database.sqlite',
+];
+```
+
+Then seed the production database:
+
+```bash
+cd ~/magicbydesign.com/gistats
+php seed.php
+```
+
+`config.local.php` is gitignored and never deployed (the SFTP action never deletes remote files), so it survives every subsequent deploy.
+
 ---
 
 ## Tasks
