@@ -103,6 +103,7 @@ $router->post('/entries', function () use ($config) {
         'duration'    => $_POST['duration'] ?? '',
         'stool_type'  => (int) $_POST['stool_type'],
         'note'        => trim($_POST['note'] ?? ''),
+        'urgency'     => $_POST['urgency'] ?? '0',
     ], $tz);
 
     if ($newId === null && !empty($_SERVER['HTTP_HX_REQUEST'])) {
@@ -250,6 +251,7 @@ $router->post('/entries/:id', function (string $id) use ($config) {
         'duration'    => $_POST['duration'] ?? '',
         'stool_type'  => (int) $_POST['stool_type'],
         'note'        => trim($_POST['note'] ?? ''),
+        'urgency'     => $_POST['urgency'] ?? '0',
     ], $tz);
 
     if ($updateResult === null && !empty($_SERVER['HTTP_HX_REQUEST'])) {
