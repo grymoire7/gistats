@@ -243,4 +243,33 @@ class ImportTest extends TestCase
         $this->assertEquals(1, $second['skipped_duplicates']);
         $this->assertEquals(1, (int) DB::fetch('SELECT COUNT(*) as n FROM entries', [])['n']);
     }
+
+    public function testImportNativeReadsUrgencyWhenPresent(): void
+    {
+        $csv = "occurred_at_utc,occurred_at_local,duration_seconds,stool_type,note,urgency\n"
+             . "2026-05-27T12:00:00Z,2026-05-27 07:00:00,300,4,Test note,1\n";
+        import_csv($this->userId, $csv, $this->tz);
+        $row = DB::fetch('SELECT urgency FROM entries WHERE user_id = ?', [$this->userId]);
+        $this->assertEquals(1, (int) $row['urgency']);
+    }
+
+    public function testImportNativeDefaultsUrgencyFalseWhenColumnAbsent(): void
+    {
+        // Older export format, no urgency column at all.
+        $csv = "occurred_at_utc,occurred_at_local,duration_seconds,stool_type,note\n"
+             . "2026-05-27T12:00:00Z,2026-05-27 07:00:00,300,4,Test note\n";
+        $result = import_csv($this->userId, $csv, $this->tz);
+        $this->assertEquals(1, $result['imported']);
+        $row = DB::fetch('SELECT urgency FROM entries WHERE user_id = ?', [$this->userId]);
+        $this->assertEquals(0, (int) $row['urgency']);
+    }
+
+    public function testImportPoopifyAlwaysDefaultsUrgencyFalse(): void
+    {
+        $row = '"2026-05-27","10:00:00","Yes","","Like a smooth, soft sausage or snake","","","","","","","","","5","","","","","","","My note",""';
+        $csv = $this->poopifyHeader . "\n" . $row . "\n";
+        import_csv($this->userId, $csv, $this->tz);
+        $entry = DB::fetch('SELECT urgency FROM entries WHERE user_id = ?', [$this->userId]);
+        $this->assertEquals(0, (int) $entry['urgency']);
+    }
 }

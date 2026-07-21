@@ -35,7 +35,7 @@ class ExportTest extends TestCase
     {
         $csv   = build_csv_export([], $this->tz);
         $lines = explode("\n", trim($csv));
-        $this->assertEquals('occurred_at_utc,occurred_at_local,duration_seconds,stool_type,note', $lines[0]);
+        $this->assertEquals('occurred_at_utc,occurred_at_local,duration_seconds,stool_type,note,urgency', $lines[0]);
     }
 
     public function testExportCsvHasCorrectDataRow(): void
@@ -62,5 +62,27 @@ class ExportTest extends TestCase
         $csv = build_csv_export(get_all_entries($this->userId), $this->tz);
         $this->assertStringNotContainsString('<', $csv);
         $this->assertStringNotContainsString('Deprecated', $csv);
+    }
+
+    public function testExportCsvHeaderIncludesUrgency(): void
+    {
+        $csv   = build_csv_export([], $this->tz);
+        $lines = explode("\n", trim($csv));
+        $this->assertEquals(
+            'occurred_at_utc,occurred_at_local,duration_seconds,stool_type,note,urgency',
+            $lines[0]
+        );
+    }
+
+    public function testExportCsvIncludesUrgencyValue(): void
+    {
+        create_entry($this->userId, [
+            'occurred_at' => '2026-05-12T14:30:00',
+            'stool_type'  => 4,
+            'urgency'     => '1',
+        ], $this->tz);
+        $csv   = build_csv_export(get_all_entries($this->userId), $this->tz);
+        $lines = explode("\n", trim($csv));
+        $this->assertStringEndsWith(',1', $lines[1]);
     }
 }

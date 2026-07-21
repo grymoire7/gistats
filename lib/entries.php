@@ -91,7 +91,7 @@ function get_all_entries(int $userId): array
 function build_csv_export(array $entries, string $tz): string
 {
     $buf = fopen('php://temp', 'w');
-    fputcsv($buf, ['occurred_at_utc', 'occurred_at_local', 'duration_seconds', 'stool_type', 'note'], escape: '\\');
+    fputcsv($buf, ['occurred_at_utc', 'occurred_at_local', 'duration_seconds', 'stool_type', 'note', 'urgency'], escape: '\\');
     foreach ($entries as $row) {
         $local = from_utc($row['occurred_at'], $tz)->format('Y-m-d H:i:s');
         fputcsv($buf, [
@@ -100,6 +100,7 @@ function build_csv_export(array $entries, string $tz): string
             $row['duration_seconds'] ?? '',
             $row['stool_type'],
             $row['note'] ?? '',
+            (int) ($row['urgency'] ?? 0),
         ], escape: '\\');
     }
     rewind($buf);
@@ -130,6 +131,8 @@ function normalize_native_row(array $row, array $colIdx, int $rowNum): array|str
         ? (int) $row[$colIdx['duration_seconds']] : null;
     $stoolRaw    = trim($row[$colIdx['stool_type']] ?? '');
     $note        = ($row[$colIdx['note']] ?? '') !== '' ? $row[$colIdx['note']] : null;
+    $urgency     = isset($colIdx['urgency']) && ($row[$colIdx['urgency']] ?? '') !== ''
+        ? (int) (bool) $row[$colIdx['urgency']] : 0;
 
     if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $occurredAt)) {
         return "Row $rowNum: invalid occurred_at_utc \"$occurredAt\".";
@@ -143,6 +146,7 @@ function normalize_native_row(array $row, array $colIdx, int $rowNum): array|str
         'stool_type'       => (int) $stoolRaw,
         'duration_seconds' => $durationSec,
         'note'             => $note,
+        'urgency'          => $urgency,
     ];
 }
 
@@ -183,6 +187,7 @@ function normalize_poopify_row(array $row, array $colIdx, int $rowNum, string $t
         'stool_type'       => $consistencyMap[$consistency],
         'duration_seconds' => $timeOnToilet !== '' ? (int) ($timeOnToilet * 60) : null,
         'note'             => $extraNotes !== '' ? $extraNotes : null,
+        'urgency'          => 0,
     ];
 }
 
@@ -240,10 +245,10 @@ function import_csv(int $userId, string $csvContent, string $timezone): array
         }
 
         $stmt = DB::execute(
-            'INSERT OR IGNORE INTO entries (user_id, occurred_at, duration_seconds, stool_type, note)
-             VALUES (?, ?, ?, ?, ?)',
+            'INSERT OR IGNORE INTO entries (user_id, occurred_at, duration_seconds, stool_type, note, urgency)
+             VALUES (?, ?, ?, ?, ?, ?)',
             [$userId, $normalized['occurred_at'], $normalized['duration_seconds'],
-             $normalized['stool_type'], $normalized['note']]
+             $normalized['stool_type'], $normalized['note'], $normalized['urgency']]
         );
 
         if ($stmt->rowCount() === 0) {
