@@ -9,10 +9,11 @@ function create_entry(int $userId, array $data, string $timezone): ?int
     $durationSec = isset($data['duration']) && $data['duration'] !== ''
         ? duration_to_seconds($data['duration'])
         : null;
+    $urgency = !empty($data['urgency']) ? 1 : 0;
     $stmt = DB::execute(
-        'INSERT OR IGNORE INTO entries (user_id, occurred_at, duration_seconds, stool_type, note)
-         VALUES (?, ?, ?, ?, ?)',
-        [$userId, $occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null]
+        'INSERT OR IGNORE INTO entries (user_id, occurred_at, duration_seconds, stool_type, note, urgency)
+         VALUES (?, ?, ?, ?, ?, ?)',
+        [$userId, $occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null, $urgency]
     );
     return $stmt->rowCount() > 0 ? (int) DB::lastInsertId() : null;
 }
@@ -23,11 +24,12 @@ function update_entry(int $id, int $userId, array $data, string $timezone): ?boo
     $durationSec = isset($data['duration']) && $data['duration'] !== ''
         ? duration_to_seconds($data['duration'])
         : null;
+    $urgency = !empty($data['urgency']) ? 1 : 0;
     try {
         $stmt = DB::execute(
-            'UPDATE entries SET occurred_at=?, duration_seconds=?, stool_type=?, note=?
+            'UPDATE entries SET occurred_at=?, duration_seconds=?, stool_type=?, note=?, urgency=?
              WHERE id=? AND user_id=?',
-            [$occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null, $id, $userId]
+            [$occurredAt, $durationSec, (int) $data['stool_type'], $data['note'] ?? null, $urgency, $id, $userId]
         );
     } catch (\PDOException $e) {
         if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {

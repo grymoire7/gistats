@@ -200,4 +200,37 @@ class EntriesTest extends TestCase
         $row = get_entry($id2, $this->userId);
         $this->assertEquals('2026-05-27T17:00:00Z', $row['occurred_at']);
     }
+
+    public function testCreateEntryStoresUrgencyTrue(): void
+    {
+        $id = create_entry($this->userId, [
+            'occurred_at' => '2026-05-12T14:30:00',
+            'stool_type'  => 4,
+            'urgency'     => '1',
+        ], $this->tz);
+        $row = DB::fetch('SELECT urgency FROM entries WHERE id = ?', [$id]);
+        $this->assertEquals(1, (int) $row['urgency']);
+    }
+
+    public function testCreateEntryDefaultsUrgencyFalseWhenOmitted(): void
+    {
+        $id = create_entry($this->userId, [
+            'occurred_at' => '2026-05-12T14:30:00',
+            'stool_type'  => 4,
+        ], $this->tz);
+        $row = DB::fetch('SELECT urgency FROM entries WHERE id = ?', [$id]);
+        $this->assertEquals(0, (int) $row['urgency']);
+    }
+
+    public function testUpdateEntryChangesUrgency(): void
+    {
+        $id = create_entry($this->userId, ['occurred_at' => '2026-05-12T14:30:00', 'stool_type' => 4], $this->tz);
+        update_entry($id, $this->userId, [
+            'occurred_at' => '2026-05-12T15:00:00',
+            'stool_type'  => 4,
+            'urgency'     => '1',
+        ], $this->tz);
+        $row = get_entry($id, $this->userId);
+        $this->assertEquals(1, (int) $row['urgency']);
+    }
 }
