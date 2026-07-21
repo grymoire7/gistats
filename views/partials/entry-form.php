@@ -19,6 +19,7 @@ if ($entry) {
     $durationVal  = $entry['duration_seconds'] ? seconds_to_duration((int)$entry['duration_seconds']) : '05:00';
     $selectedType = (int) $entry['stool_type'];
     $noteVal      = $entry['note'] ?? '';
+    $urgencyVal   = !empty($entry['urgency']);
     $formAction   = $isEdit
         ? $baseUrl . '/entries/' . (int)$entry['id']
         : $baseUrl . '/entries';
@@ -27,6 +28,7 @@ if ($entry) {
     $durationVal  = '05:00';
     $selectedType = 4;
     $noteVal      = '';
+    $urgencyVal   = false;
     $formAction   = $baseUrl . '/entries';
 }
 $errors = $errors ?? [];
@@ -75,17 +77,23 @@ $errors = $errors ?? [];
                       style="resize:vertical;"><?= htmlspecialchars($noteVal) ?></textarea>
         </div>
 
-        <div style="display:flex;gap:10px;">
-            <button type="submit" class="btn-primary">Save</button>
-            <?php if ($isEdit): ?>
-            <button type="button" class="btn-outline"
-                hx-get="<?= htmlspecialchars($baseUrl) ?>/entries/new"
-                hx-target="#entry-form-wrap"
-                hx-swap="outerHTML">Cancel</button>
-            <?php else: ?>
-            <button type="button" class="btn-outline" onclick="resetForm()">Reset</button>
-            <button type="button" id="timer-btn" class="btn-outline" onclick="toggleTimer()">▶</button>
-            <?php endif; ?>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <div style="display:flex;gap:10px;">
+                <button type="submit" class="btn-primary">Save</button>
+                <?php if ($isEdit): ?>
+                <button type="button" class="btn-outline"
+                    hx-get="<?= htmlspecialchars($baseUrl) ?>/entries/new"
+                    hx-target="#entry-form-wrap"
+                    hx-swap="outerHTML">Cancel</button>
+                <?php else: ?>
+                <button type="button" class="btn-outline" onclick="resetForm()">Reset</button>
+                <button type="button" id="timer-btn" class="btn-outline" onclick="toggleTimer()">▶</button>
+                <?php endif; ?>
+            </div>
+            <input type="hidden" name="urgency" id="urgency-input" value="<?= $urgencyVal ? '1' : '0' ?>">
+            <button type="button" id="urgency-btn"
+                class="btn-urgency<?= $urgencyVal ? ' active' : '' ?>"
+                onclick="toggleUrgency()">Urgency <?= $urgencyVal ? '🫪' : '😌' ?></button>
         </div>
         <div style="min-height:24px;display:flex;align-items:center;">
             <span id="pending-indicator"
@@ -197,6 +205,22 @@ $errors = $errors ?? [];
         document.querySelector('[name="duration"]').value = '05:00';
         document.querySelector('[name="note"]').value = '';
         selectType(4);
+        var urgencyInput = document.getElementById('urgency-input');
+        var urgencyBtn = document.getElementById('urgency-btn');
+        if (urgencyInput && urgencyInput.value === '1') {
+            urgencyInput.value = '0';
+            urgencyBtn.classList.remove('active');
+            urgencyBtn.textContent = 'Urgency 😌';
+        }
+    };
+
+    window.toggleUrgency = function () {
+        var input = document.getElementById('urgency-input');
+        var btn = document.getElementById('urgency-btn');
+        var isActive = input.value === '1';
+        input.value = isActive ? '0' : '1';
+        btn.classList.toggle('active', !isActive);
+        btn.textContent = isActive ? 'Urgency 😌' : 'Urgency 🫪';
     };
 }());
 </script>
