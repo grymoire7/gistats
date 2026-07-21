@@ -19,4 +19,17 @@ class ConfigTest extends TestCase
         putenv('GISTATS_DB_PATH');
         $this->assertEquals('/tmp/integration-test.sqlite', $config['db_path']);
     }
+
+    public function testMergesConfigLocalPhpOverDefaultsWhenPresent(): void
+    {
+        $localPath = __DIR__ . '/../config.local.php';
+        file_put_contents($localPath, "<?php return ['base_url' => '/gistats'];\n");
+        try {
+            $config = require __DIR__ . '/../config.php';
+            $this->assertEquals('/gistats', $config['base_url']);
+            $this->assertEquals('America/Chicago', $config['timezone']);
+        } finally {
+            unlink($localPath);
+        }
+    }
 }

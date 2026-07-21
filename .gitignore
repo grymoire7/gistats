@@ -34,6 +34,9 @@ database.sqlite
 database.sqlite-shm
 database.sqlite-wal
 
+# Production config override (never committed)
+config.local.php
+
 # Compiled CSS
 css/compiled.css
 
