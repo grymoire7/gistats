@@ -95,4 +95,50 @@ class DBTest extends TestCase
         $this->assertInstanceOf(PDO::class, $pdo);
         if (file_exists($path2)) unlink($path2);
     }
+
+    public function testCreateSchemaAddsUrgencyColumnOnFreshDb(): void
+    {
+        DB::init($this->config());
+        DB::createSchema();
+        $cols = DB::fetchAll("PRAGMA table_info(entries)");
+        $names = array_column($cols, 'name');
+        $this->assertContains('urgency', $names);
+    }
+
+    public function testCreateSchemaIsIdempotentForUrgencyColumn(): void
+    {
+        DB::init($this->config());
+        DB::createSchema();
+        DB::createSchema(); // must not throw
+        $cols = DB::fetchAll("PRAGMA table_info(entries)");
+        $names = array_column($cols, 'name');
+        $this->assertEquals(1, count(array_filter($names, fn($n) => $n === 'urgency')));
+    }
+
+    public function testCreateSchemaMigratesPreExistingEntriesTableWithoutUrgency(): void
+    {
+        $pdo = DB::init($this->config());
+        // Simulate a pre-migration DB: entries table without the urgency column.
+        $pdo->exec('
+            CREATE TABLE entries (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id          INTEGER NOT NULL,
+                occurred_at      TEXT    NOT NULL,
+                duration_seconds INTEGER,
+                stool_type       INTEGER NOT NULL,
+                note             TEXT,
+                created_at       TEXT    NOT NULL DEFAULT (strftime(\'%Y-%m-%dT%H:%M:%SZ\', \'now\'))
+            );
+        ');
+        $pdo->exec("INSERT INTO entries (user_id, occurred_at, stool_type) VALUES (1, '2026-05-12T14:30:00Z', 4)");
+
+        DB::createSchema();
+
+        $cols = DB::fetchAll("PRAGMA table_info(entries)");
+        $names = array_column($cols, 'name');
+        $this->assertContains('urgency', $names);
+
+        $row = DB::fetch('SELECT urgency FROM entries WHERE user_id = 1');
+        $this->assertEquals(0, (int) $row['urgency']);
+    }
 }
