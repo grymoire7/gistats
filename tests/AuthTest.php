@@ -78,4 +78,42 @@ class AuthTest extends TestCase
         logout();
         $this->assertArrayNotHasKey('user_id', $_SESSION);
     }
+
+    public function testChangePasswordWithCorrectCurrentPassword(): void
+    {
+        login('admin', 'secret');
+        $userId = current_user_id();
+        $result = change_password($userId, 'secret', 'newpassword123');
+        $this->assertTrue($result);
+        $_SESSION = [];
+        $this->assertTrue(login('admin', 'newpassword123'));
+    }
+
+    public function testChangePasswordWithWrongCurrentPassword(): void
+    {
+        login('admin', 'secret');
+        $userId = current_user_id();
+        $result = change_password($userId, 'wrongpassword', 'newpassword123');
+        $this->assertFalse($result);
+        $_SESSION = [];
+        $this->assertTrue(login('admin', 'secret'));
+    }
+
+    public function testValidateNewPasswordRejectsShortPassword(): void
+    {
+        $errors = validate_new_password('short', 'short');
+        $this->assertContains('New password must be at least 8 characters.', $errors);
+    }
+
+    public function testValidateNewPasswordRejectsMismatch(): void
+    {
+        $errors = validate_new_password('password123', 'different123');
+        $this->assertContains('New passwords do not match.', $errors);
+    }
+
+    public function testValidateNewPasswordAcceptsValidInput(): void
+    {
+        $errors = validate_new_password('password123', 'password123');
+        $this->assertEmpty($errors);
+    }
 }

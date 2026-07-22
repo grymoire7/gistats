@@ -367,6 +367,31 @@ $router->post('/entries/:id/delete', function (string $id) use ($config) {
     echo '';
 });
 
+$router->get('/admin', function () use ($config) {
+    require_auth();
+    render('admin');
+});
+
+$router->post('/admin/password', function () use ($config) {
+    require_auth();
+    require_csrf();
+    $userId  = current_user_id();
+    $current = $_POST['current_password'] ?? '';
+    $new     = $_POST['new_password'] ?? '';
+    $confirm = $_POST['new_password_confirm'] ?? '';
+
+    $errors = validate_new_password($new, $confirm);
+    if ($errors) {
+        render('admin', ['passwordError' => implode(' ', $errors)]);
+        return;
+    }
+    if (!change_password($userId, $current, $new)) {
+        render('admin', ['passwordError' => 'Current password is incorrect.']);
+        return;
+    }
+    render('admin', ['passwordSuccess' => true]);
+});
+
 $router->get('/export', function () use ($config) {
     require_auth();
     $userId  = current_user_id();

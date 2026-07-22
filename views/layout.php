@@ -36,6 +36,9 @@
             <li><a href="<?= htmlspecialchars($config['base_url']) ?>/login" style="color:var(--color-text);text-decoration:none;font-size:15px;">Login</a></li>
             <?php endif; ?>
             <li><a href="<?= htmlspecialchars($config['base_url']) ?>/stats" style="color:var(--color-text);text-decoration:none;font-size:15px;">Statistics</a></li>
+            <?php if (is_logged_in()): ?>
+            <li><a href="<?= htmlspecialchars($config['base_url']) ?>/admin" style="color:var(--color-text);text-decoration:none;font-size:15px;">Admin</a></li>
+            <?php endif; ?>
             <li><a href="<?= htmlspecialchars($config['base_url']) ?>/export" style="color:var(--color-text);text-decoration:none;font-size:15px;">Export CSV</a></li>
             <li><a href="<?= htmlspecialchars($config['base_url']) ?>/import" style="color:var(--color-text);text-decoration:none;font-size:15px;">Import CSV</a></li>
             <li><a href="<?= htmlspecialchars($config['base_url']) ?>/about" style="color:var(--color-text);text-decoration:none;font-size:15px;">About</a></li>

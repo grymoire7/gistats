@@ -64,3 +64,21 @@ function validate_new_account(string $username, string $password, string $confir
     if ($password !== $confirm) { $errors[] = 'Passwords do not match.'; }
     return $errors;
 }
+
+function change_password(int $userId, string $currentPassword, string $newPassword): bool
+{
+    $user = DB::fetch('SELECT * FROM users WHERE id = ?', [$userId]);
+    if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
+        return false;
+    }
+    DB::execute('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($newPassword, PASSWORD_BCRYPT), $userId]);
+    return true;
+}
+
+function validate_new_password(string $newPassword, string $confirm): array
+{
+    $errors = [];
+    if (strlen($newPassword) < 8) { $errors[] = 'New password must be at least 8 characters.'; }
+    if ($newPassword !== $confirm) { $errors[] = 'New passwords do not match.'; }
+    return $errors;
+}
