@@ -91,10 +91,7 @@ $router->post('/setup', function () use ($config) {
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['password_confirm'] ?? '';
 
-    $errors = [];
-    if ($username === '') { $errors[] = 'Username is required.'; }
-    if (strlen($password) < 8) { $errors[] = 'Password must be at least 8 characters.'; }
-    if ($password !== $confirm) { $errors[] = 'Passwords do not match.'; }
+    $errors = validate_new_account($username, $password, $confirm);
 
     if ($errors) {
         render('setup', ['errors' => $errors]);

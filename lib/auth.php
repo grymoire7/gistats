@@ -55,3 +55,12 @@ function create_account(string $username, string $password): void
         [$username, password_hash($password, PASSWORD_BCRYPT)]
     );
 }
+
+function validate_new_account(string $username, string $password, string $confirm): array
+{
+    $errors = [];
+    if ($username === '') { $errors[] = 'Username is required.'; }
+    if (strlen($password) < 8) { $errors[] = 'Password must be at least 8 characters.'; }
+    if ($password !== $confirm) { $errors[] = 'Passwords do not match.'; }
+    return $errors;
+}

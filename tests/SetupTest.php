@@ -54,4 +54,28 @@ class SetupTest extends TestCase
         $this->assertTrue($result);
         $_SESSION = [];
     }
+
+    public function testValidateNewAccountRejectsEmptyUsername(): void
+    {
+        $errors = validate_new_account('', 'password123', 'password123');
+        $this->assertContains('Username is required.', $errors);
+    }
+
+    public function testValidateNewAccountRejectsShortPassword(): void
+    {
+        $errors = validate_new_account('admin', 'short', 'short');
+        $this->assertContains('Password must be at least 8 characters.', $errors);
+    }
+
+    public function testValidateNewAccountRejectsMismatchedPasswords(): void
+    {
+        $errors = validate_new_account('admin', 'password123', 'different123');
+        $this->assertContains('Passwords do not match.', $errors);
+    }
+
+    public function testValidateNewAccountAcceptsValidInput(): void
+    {
+        $errors = validate_new_account('admin', 'password123', 'password123');
+        $this->assertEmpty($errors);
+    }
 }
