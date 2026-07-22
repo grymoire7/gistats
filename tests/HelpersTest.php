@@ -211,4 +211,26 @@ class HelpersTest extends TestCase
         $today = (new DateTime('now', new DateTimeZone($tz)))->format('Y-m-d');
         $this->assertEquals(2, $freq[$today]);
     }
+
+    // --- Base path stripping ---
+
+    public function testStripBasePathRemovesPrefix(): void
+    {
+        $this->assertEquals('/setup', strip_base_path('/gistats/setup', '/gistats'));
+    }
+
+    public function testStripBasePathRootBecomesSlash(): void
+    {
+        $this->assertEquals('/', strip_base_path('/gistats', '/gistats'));
+    }
+
+    public function testStripBasePathWithEmptyBasePathReturnsUriUnchanged(): void
+    {
+        $this->assertEquals('/setup', strip_base_path('/setup', ''));
+    }
+
+    public function testStripBasePathWithNonMatchingPrefixReturnsUriUnchanged(): void
+    {
+        $this->assertEquals('/other/setup', strip_base_path('/other/setup', '/gistats'));
+    }
 }

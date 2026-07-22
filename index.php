@@ -20,12 +20,13 @@ try {
     exit;
 }
 
-$requestPath = strtok($_SERVER['REQUEST_URI'], '?');
+$basePath = rtrim($config['base_url'], '/');
+$requestPath = strip_base_path(strtok($_SERVER['REQUEST_URI'], '?'), $basePath);
 if ($requestPath !== '/') {
     $requestPath = rtrim($requestPath, '/');
 }
 if ($requestPath !== '/setup' && no_users_exist()) {
-    header('Location: /setup');
+    header('Location: ' . $basePath . '/setup');
     exit;
 }
 
@@ -63,30 +64,30 @@ $router->get('/', function () use ($config) {
     render('home', compact('entries', 'calendar', 'year', 'month', 'total'));
 });
 
-$router->get('/login', function () use ($config) {
-    if (is_logged_in()) { header('Location: /'); exit; }
+$router->get('/login', function () use ($config, $basePath) {
+    if (is_logged_in()) { header('Location: ' . $basePath . '/'); exit; }
     render('login');
 });
 
-$router->post('/login', function () use ($config) {
+$router->post('/login', function () use ($config, $basePath) {
     require_csrf();
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     if (login($username, $password)) {
-        header('Location: /');
+        header('Location: ' . $basePath . '/');
         exit;
     }
     render('login', ['error' => 'Invalid username or password.']);
 });
 
-$router->get('/setup', function () use ($config) {
-    if (!no_users_exist()) { header('Location: /'); exit; }
+$router->get('/setup', function () use ($config, $basePath) {
+    if (!no_users_exist()) { header('Location: ' . $basePath . '/'); exit; }
     render('setup');
 });
 
-$router->post('/setup', function () use ($config) {
+$router->post('/setup', function () use ($config, $basePath) {
     require_csrf();
-    if (!no_users_exist()) { header('Location: /'); exit; }
+    if (!no_users_exist()) { header('Location: ' . $basePath . '/'); exit; }
 
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -101,18 +102,18 @@ $router->post('/setup', function () use ($config) {
 
     create_account($username, $password);
     login($username, $password);
-    header('Location: /');
+    header('Location: ' . $basePath . '/');
     exit;
 });
 
-$router->post('/logout', function () use ($config) {
+$router->post('/logout', function () use ($config, $basePath) {
     require_csrf();
     logout();
-    header('Location: /login');
+    header('Location: ' . $basePath . '/login');
     exit;
 });
 
-$router->post('/entries', function () use ($config) {
+$router->post('/entries', function () use ($config, $basePath) {
     require_auth();
     require_csrf();
     $userId = current_user_id();
@@ -174,7 +175,7 @@ $router->post('/entries', function () use ($config) {
         echo '<div id="entries-wrap" hx-swap-oob="true">' . $listHtml . '</div>';
         echo '<div id="calendar-wrap" hx-swap-oob="true">' . $calendarHtml . '</div>';
     } else {
-        header('Location: /');
+        header('Location: ' . $basePath . '/');
         exit;
     }
 });
@@ -260,7 +261,7 @@ $router->get('/entries/:id/copy', function (string $id) use ($config) {
 });
 
 // Update
-$router->post('/entries/:id', function (string $id) use ($config) {
+$router->post('/entries/:id', function (string $id) use ($config, $basePath) {
     require_auth();
     require_csrf();
     $userId = current_user_id();
@@ -321,7 +322,7 @@ $router->post('/entries/:id', function (string $id) use ($config) {
         echo '<div id="entries-wrap" hx-swap-oob="true">' . $listHtml . '</div>';
         echo '<div id="calendar-wrap" hx-swap-oob="true">' . $calendarHtml . '</div>';
     } else {
-        header('Location: /');
+        header('Location: ' . $basePath . '/');
         exit;
     }
 });
@@ -403,7 +404,7 @@ $router->get('/admin/backup', function () use ($config) {
     exit;
 });
 
-$router->post('/admin/restore', function () use ($config) {
+$router->post('/admin/restore', function () use ($config, $basePath) {
     require_auth();
     require_csrf();
 
@@ -428,7 +429,7 @@ $router->post('/admin/restore', function () use ($config) {
         return;
     }
     logout();
-    header('Location: /login');
+    header('Location: ' . $basePath . '/login');
     exit;
 });
 
@@ -485,7 +486,7 @@ $router->get('/csrf-token', function () {
     echo json_encode(['token' => csrf_token()]);
 });
 
-$result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+$result = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD'], $basePath);
 if ($result === null) {
     http_response_code(404);
     include __DIR__ . '/views/404.php';

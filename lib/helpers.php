@@ -1,5 +1,14 @@
 <?php
 
+function strip_base_path(string $uri, string $basePath): string
+{
+    if ($basePath === '' || strpos($uri, $basePath) !== 0) {
+        return $uri;
+    }
+    $stripped = substr($uri, strlen($basePath));
+    return $stripped === '' ? '/' : $stripped;
+}
+
 function to_utc(string $localDatetime, string $timezone): string
 {
     $dt = new DateTime($localDatetime, new DateTimeZone($timezone));

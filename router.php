@@ -1,5 +1,7 @@
 <?php
 // router.php
+require_once __DIR__ . '/lib/helpers.php';
+
 class Router {
     private $routes = [];
 
@@ -23,9 +25,10 @@ class Router {
         ];
     }
 
-    public function dispatch($uri, $method) {
+    public function dispatch($uri, $method, $basePath = '') {
         // Remove query string
         $uri = strtok($uri, '?');
+        $uri = strip_base_path($uri, $basePath);
         // Remove trailing slash, but preserve root
         if ($uri !== '/') {
             $uri = rtrim($uri, '/');
