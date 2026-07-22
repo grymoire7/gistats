@@ -9,6 +9,7 @@
         "test:syntax": "git ls-files '*.php' | xargs -n1 -P4 php -l"
     },
     "devDependencies": {
+        "@tailwindcss/cli": "^4.1.18",
         "tailwindcss": "^4.1.18"
     }
 }
