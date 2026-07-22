@@ -12,9 +12,19 @@ require_once __DIR__ . '/router.php';
 
 try {
     DB::init($config);
+    DB::createSchema();
 } catch (PDOException $e) {
     http_response_code(503);
-    echo '<h1>Database unavailable</h1><p>Run <code>php seed.php</code> to set up the database.</p>';
+    echo '<h1>Database unavailable</h1><p>Check that the configured database path is writable.</p>';
+    exit;
+}
+
+$requestPath = strtok($_SERVER['REQUEST_URI'], '?');
+if ($requestPath !== '/') {
+    $requestPath = rtrim($requestPath, '/');
+}
+if ($requestPath !== '/setup' && no_users_exist()) {
+    header('Location: /setup');
     exit;
 }
 
@@ -66,6 +76,35 @@ $router->post('/login', function () use ($config) {
         exit;
     }
     render('login', ['error' => 'Invalid username or password.']);
+});
+
+$router->get('/setup', function () use ($config) {
+    if (!no_users_exist()) { header('Location: /'); exit; }
+    render('setup');
+});
+
+$router->post('/setup', function () use ($config) {
+    require_csrf();
+    if (!no_users_exist()) { header('Location: /'); exit; }
+
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm  = $_POST['password_confirm'] ?? '';
+
+    $errors = [];
+    if ($username === '') { $errors[] = 'Username is required.'; }
+    if (strlen($password) < 8) { $errors[] = 'Password must be at least 8 characters.'; }
+    if ($password !== $confirm) { $errors[] = 'Passwords do not match.'; }
+
+    if ($errors) {
+        render('setup', ['errors' => $errors]);
+        return;
+    }
+
+    create_account($username, $password);
+    login($username, $password);
+    header('Location: /');
+    exit;
 });
 
 $router->post('/logout', function () use ($config) {

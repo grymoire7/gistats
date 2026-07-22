@@ -141,4 +141,15 @@ class DBTest extends TestCase
         $row = DB::fetch('SELECT urgency FROM entries WHERE user_id = 1');
         $this->assertEquals(0, (int) $row['urgency']);
     }
+
+    public function testInitCreatesMissingParentDirectory(): void
+    {
+        $nestedDir    = sys_get_temp_dir() . '/gistats_test_nested_' . uniqid();
+        $nestedDbPath = $nestedDir . '/database.sqlite';
+        $pdo = DB::init(['db_path' => $nestedDbPath]);
+        $this->assertInstanceOf(PDO::class, $pdo);
+        $this->assertDirectoryExists($nestedDir);
+        unlink($nestedDbPath);
+        rmdir($nestedDir);
+    }
 }

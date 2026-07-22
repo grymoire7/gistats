@@ -41,3 +41,17 @@ function logout(): void
     }
     session_destroy();
 }
+
+function no_users_exist(): bool
+{
+    $result = DB::fetch('SELECT COUNT(*) AS count FROM users');
+    return ((int) $result['count']) === 0;
+}
+
+function create_account(string $username, string $password): void
+{
+    DB::execute(
+        'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+        [$username, password_hash($password, PASSWORD_BCRYPT)]
+    );
+}
