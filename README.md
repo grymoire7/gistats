@@ -6,7 +6,7 @@ A personal GI health tracker built around the Bristol Stool Scale.
 
 ## Overview
 
-Log bowel movements, view trends on a calendar, track statistics over time, and export your data as CSV. Sign in and open Export CSV in the nav drawer, or visit `/export` directly. The download includes UTC timestamps, local timestamps, duration in seconds, Bristol stool type, and notes.
+Log bowel movements, view trends on a calendar, track statistics over time, and export your data as CSV. Sign in and open the Admin page to import, export, back up, or restore your data, or visit `/export` directly for a quick CSV download. The download includes UTC timestamps, local timestamps, duration in seconds, Bristol stool type, and notes.
 
 ### Project structure
 
@@ -15,17 +15,19 @@ Log bowel movements, view trends on a calendar, track statistics over time, and 
 ├── config.php         # Runtime configuration
 ├── router.php         # Simple pattern-matching router
 ├── server.php         # PHP built-in server router (static file passthrough)
-├── seed.php           # CLI: create database and admin user
 ├── lib/
 │   ├── db.php         # PDO/SQLite wrapper (singleton)
 │   ├── helpers.php    # Pure functions: timezone, duration, calendar, stats
 │   ├── entries.php    # Entry CRUD
-│   ├── auth.php       # Session auth
+│   ├── auth.php       # Session auth, account setup, password change
+│   ├── backup.php     # Database backup and restore
 │   └── csrf.php       # CSRF token helpers
 ├── views/
 │   ├── layout.php     # HTML shell with nav drawer
 │   ├── home.php       # Entry form + calendar + event list
 │   ├── login.php      # Sign-in form
+│   ├── setup.php      # One-time account creation form
+│   ├── admin.php      # Password change, import/export, backup, restore
 │   ├── stats.php      # Statistics with Chart.js
 │   ├── about.php      # About page
 │   ├── 404.php        # Standalone 404
@@ -55,20 +57,15 @@ npm install
 npm run build:css
 ```
 
-Create the database and your user account:
+Start the app (see [Tasks](#tasks) below), then open it in a browser. With no database present yet, the app creates one automatically and shows a one-time "Create your account" form — fill it in to finish setup.
 
-```bash
-php seed.php
-```
-
-The script prompts for a username and password, creates the SQLite database at `database.sqlite`, and applies the schema. Run it again with the same username to reset that user's password, since it uses `INSERT OR REPLACE`.
-
-To wipe and recreate the database:
+To start over with a fresh database:
 
 ```bash
 rm database.sqlite
-php seed.php
 ```
+
+Reloading the app recreates the schema and shows the setup form again.
 
 ### Configuring the app
 
@@ -101,13 +98,7 @@ Pushing to `main` runs a two-job pipeline (`.github/workflows/deploy.yml`):
 | `DREAMHOST_USERNAME` | DreamHost SFTP username |
 | `DREAMHOST_PASSWORD` | DreamHost SFTP password |
 
-**One-time server setup**, via SSH:
-
-```bash
-mkdir -p ~/data/gitstats
-```
-
-After the first deploy creates the `gistats/` web directory, place `~/magicbydesign.com/gistats/config.local.php` on the server:
+**One-time server setup**, via SSH: after the first deploy creates the `gistats/` web directory, place `~/magicbydesign.com/gistats/config.local.php` on the server:
 
 ```php
 <?php return [
@@ -116,14 +107,21 @@ After the first deploy creates the `gistats/` web directory, place `~/magicbydes
 ];
 ```
 
-Then seed the production database:
+`config.local.php` is gitignored and never deployed (the SFTP action never deletes remote files), so it survives every subsequent deploy. The app creates its own data directory, database, and schema automatically on first request — visit the site and fill out the one-time "Create your account" form to finish setup.
+
+**Password recovery:** if you forget your password, SSH in and run:
 
 ```bash
 cd ~/magicbydesign.com/gistats
-php seed.php
+php -r "
+require 'config.php';
+require 'lib/db.php';
+\$config = require 'config.php';
+DB::init(\$config);
+DB::execute('UPDATE users SET password_hash = ? WHERE username = ?', [password_hash('newpassword', PASSWORD_BCRYPT), 'yourusername']);
+echo \"Password updated.\n\";
+"
 ```
-
-`config.local.php` is gitignored and never deployed (the SFTP action never deletes remote files), so it survives every subsequent deploy.
 
 ---
 
