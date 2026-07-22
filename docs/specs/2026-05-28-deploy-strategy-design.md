@@ -63,7 +63,7 @@ On the DreamHost server, `/home/ccshell/magicbydesign.com/gistats/config.local.p
 ```php
 <?php return [
     'base_url' => '/gistats',
-    'db_path'  => '/home/ccshell/data/gitstats/database.sqlite',
+    'db_path'  => '/home/ccshell/data/gistats/database.sqlite',
 ];
 ```
 
@@ -77,15 +77,11 @@ Performed once via SSH before or after the first deploy:
 
 ```bash
 # Create data directory outside web root
-mkdir -p ~/data/gitstats
+mkdir -p ~/data/gistats
 
 # After first deploy creates the gistats/ web directory:
 # Place config.local.php (contents above) at:
 # ~/magicbydesign.com/gistats/config.local.php
-
-# Seed the production database
-cd ~/magicbydesign.com/gistats
-php seed.php
 ```
 
 The `gistats/` web directory is created by the first SFTP deploy. `config.local.php` survives all subsequent deploys because `delete_remote_files: false`.
