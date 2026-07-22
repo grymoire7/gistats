@@ -404,11 +404,6 @@ $router->get('/export', function () use ($config) {
     exit;
 });
 
-$router->get('/import', function () use ($config) {
-    require_auth();
-    render('import');
-});
-
 $router->post('/import', function () use ($config) {
     require_auth();
     require_csrf();
@@ -416,22 +411,22 @@ $router->post('/import', function () use ($config) {
 
     $uploadError = $_FILES['csv_file']['error'] ?? UPLOAD_ERR_NO_FILE;
     if ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
-        render('import', ['error' => 'The uploaded file exceeds the maximum allowed size.']);
+        render('admin', ['importError' => 'The uploaded file exceeds the maximum allowed size.']);
         return;
     }
     if (empty($_FILES['csv_file']['tmp_name']) || $uploadError !== UPLOAD_ERR_OK) {
-        render('import', ['error' => 'No file uploaded or upload error.']);
+        render('admin', ['importError' => 'No file uploaded or upload error.']);
         return;
     }
 
     $csvContent = file_get_contents($_FILES['csv_file']['tmp_name']);
     if ($csvContent === false || trim($csvContent) === '') {
-        render('import', ['error' => 'The uploaded file is empty.']);
+        render('admin', ['importError' => 'The uploaded file is empty.']);
         return;
     }
 
     $result = import_csv(current_user_id(), $csvContent, $tz);
-    render('import', ['result' => $result]);
+    render('admin', ['importResult' => $result]);
 });
 
 $router->get('/about', function () use ($config) {
