@@ -3,6 +3,7 @@ $passwordError   = $passwordError   ?? null;
 $passwordSuccess = $passwordSuccess ?? null;
 $importResult    = $importResult    ?? null;
 $importError     = $importError     ?? null;
+$restoreError    = $restoreError    ?? null;
 ?>
 <h2 style="font-size:18px;font-weight:600;margin:0 0 20px;">Admin</h2>
 
@@ -97,4 +98,44 @@ $importError     = $importError     ?? null;
         Downloads a complete, consistent copy of your database.
     </p>
     <a href="<?= htmlspecialchars($config['base_url']) ?>/admin/backup" class="btn-primary" style="display:inline-block;">Download Backup</a>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h3 style="font-size:15px;font-weight:600;margin:0 0 16px;">Restore from Backup</h3>
+    <?php if ($restoreError): ?>
+    <p style="color:var(--color-red);margin:0 0 16px;font-size:14px;"><?= htmlspecialchars($restoreError) ?></p>
+    <?php endif; ?>
+    <form method="post" action="<?= htmlspecialchars($config['base_url']) ?>/admin/restore"
+          enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:14px;">
+        <?= csrf_field() ?>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <input type="file" id="backup_file_input" name="backup_file" accept=".sqlite" required
+                   style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+            <label for="backup_file_input" class="btn-outline" style="display:inline-block;cursor:pointer;white-space:nowrap;">
+                Choose File
+            </label>
+            <span id="backup_file_name" style="font-size:13px;color:var(--color-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">No file selected</span>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-muted);">
+            <input type="checkbox" id="restore-confirm-input" required>
+            I understand this will overwrite my current data.
+        </label>
+        <button type="submit" id="restore-btn" class="btn-danger" disabled>Restore</button>
+    </form>
+    <script>
+    (function () {
+        var fileInput  = document.getElementById('backup_file_input');
+        var nameEl     = document.getElementById('backup_file_name');
+        var confirmBox = document.getElementById('restore-confirm-input');
+        var restoreBtn = document.getElementById('restore-btn');
+        function updateButton() {
+            restoreBtn.disabled = !(fileInput.files.length > 0 && confirmBox.checked);
+        }
+        fileInput.addEventListener('change', function () {
+            nameEl.textContent = this.files.length > 0 ? this.files[0].name : 'No file selected';
+            updateButton();
+        });
+        confirmBox.addEventListener('change', updateButton);
+    }());
+    </script>
 </div>

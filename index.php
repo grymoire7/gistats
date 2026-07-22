@@ -403,6 +403,32 @@ $router->get('/admin/backup', function () use ($config) {
     exit;
 });
 
+$router->post('/admin/restore', function () use ($config) {
+    require_auth();
+    require_csrf();
+
+    $uploadError = $_FILES['backup_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+    if ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
+        render('admin', ['restoreError' => 'The uploaded file exceeds the maximum allowed size.']);
+        return;
+    }
+    if (empty($_FILES['backup_file']['tmp_name']) || $uploadError !== UPLOAD_ERR_OK) {
+        render('admin', ['restoreError' => 'No file uploaded or upload error.']);
+        return;
+    }
+
+    $validationError = validate_sqlite_upload($_FILES['backup_file']['tmp_name']);
+    if ($validationError !== null) {
+        render('admin', ['restoreError' => $validationError]);
+        return;
+    }
+
+    restore_from_upload($config['db_path'], $_FILES['backup_file']['tmp_name']);
+    logout();
+    header('Location: /login');
+    exit;
+});
+
 $router->get('/export', function () use ($config) {
     require_auth();
     $userId  = current_user_id();
