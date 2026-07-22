@@ -235,10 +235,7 @@ $router->post('/setup', function () use ($config) {
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['password_confirm'] ?? '';
 
-    $errors = [];
-    if ($username === '') { $errors[] = 'Username is required.'; }
-    if (strlen($password) < 8) { $errors[] = 'Password must be at least 8 characters.'; }
-    if ($password !== $confirm) { $errors[] = 'Passwords do not match.'; }
+    $errors = validate_new_account($username, $password, $confirm);
 
     if ($errors) {
         render('setup', ['errors' => $errors]);
@@ -251,6 +248,8 @@ $router->post('/setup', function () use ($config) {
     exit;
 });
 ```
+
+**Post-review amendment:** the validation logic was extracted into `validate_new_account(string $username, string $password, string $confirm): array` in `lib/auth.php` (same three checks: empty username, password shorter than 8 characters, mismatched confirmation — returns an array of error strings, empty means valid), with dedicated PHPUnit coverage in `tests/SetupTest.php`. This was a deliberate deviation from the original plan text above (which had the checks inline, matching how `POST /entries`'s validation is untested elsewhere in this codebase) — the task reviewer flagged the untestable inline validation as a gap, and the user chose to raise the bar for account-creation specifically, since it's higher-stakes than entry validation. See commit `9ed6a4d`.
 
 - [ ] **Step 10: Create the setup view**
 
