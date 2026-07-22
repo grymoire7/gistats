@@ -90,3 +90,11 @@ $importError     = $importError     ?? null;
 
     <a href="<?= htmlspecialchars($config['base_url']) ?>/export" class="btn-outline" style="display:inline-block;">Export CSV</a>
 </div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h3 style="font-size:15px;font-weight:600;margin:0 0 16px;">Backup</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--color-muted);">
+        Downloads a complete, consistent copy of your database.
+    </p>
+    <a href="<?= htmlspecialchars($config['base_url']) ?>/admin/backup" class="btn-primary" style="display:inline-block;">Download Backup</a>
+</div>

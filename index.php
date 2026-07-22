@@ -8,6 +8,7 @@ require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/entries.php';
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/csrf.php';
+require_once __DIR__ . '/lib/backup.php';
 require_once __DIR__ . '/router.php';
 
 try {
@@ -390,6 +391,16 @@ $router->post('/admin/password', function () use ($config) {
         return;
     }
     render('admin', ['passwordSuccess' => true]);
+});
+
+$router->get('/admin/backup', function () use ($config) {
+    require_auth();
+    $backupPath = create_backup($config['db_path']);
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="gistats-backup-' . date('Ymd-His') . '.sqlite"');
+    register_shutdown_function('unlink', $backupPath);
+    readfile($backupPath);
+    exit;
 });
 
 $router->get('/export', function () use ($config) {
