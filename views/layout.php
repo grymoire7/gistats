@@ -13,7 +13,7 @@
 
     <!-- Header -->
     <header style="background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
-        <a href="/" style="color:var(--color-text);text-decoration:none;font-size:18px;font-weight:600;letter-spacing:-0.02em;">GI Stats</a>
+        <a href="<?= htmlspecialchars($config['base_url']) ?>/" style="color:var(--color-text);text-decoration:none;font-size:18px;font-weight:600;letter-spacing:-0.02em;">GI Stats</a>
         <button id="nav-toggle" style="background:none;border:none;color:var(--color-text);font-size:22px;cursor:pointer;padding:0 4px;">≡</button>
     </header>
 
