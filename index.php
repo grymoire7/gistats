@@ -423,7 +423,10 @@ $router->post('/admin/restore', function () use ($config) {
         return;
     }
 
-    restore_from_upload($config['db_path'], $_FILES['backup_file']['tmp_name']);
+    if (!restore_from_upload($config['db_path'], $_FILES['backup_file']['tmp_name'])) {
+        render('admin', ['restoreError' => 'Restore failed. Your existing data was not modified.']);
+        return;
+    }
     logout();
     header('Location: /login');
     exit;

@@ -62,7 +62,7 @@ Start the app (see [Tasks](#tasks) below), then open it in a browser. With no da
 To start over with a fresh database:
 
 ```bash
-rm database.sqlite
+rm -f database.sqlite database.sqlite-wal database.sqlite-shm
 ```
 
 Reloading the app recreates the schema and shows the setup form again.
@@ -114,7 +114,6 @@ Pushing to `main` runs a two-job pipeline (`.github/workflows/deploy.yml`):
 ```bash
 cd ~/magicbydesign.com/gistats
 php -r "
-require 'config.php';
 require 'lib/db.php';
 \$config = require 'config.php';
 DB::init(\$config);

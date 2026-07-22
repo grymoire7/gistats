@@ -32,7 +32,7 @@ function validate_sqlite_upload(string $tmpPath): ?string
     return null;
 }
 
-function restore_from_upload(string $dbPath, string $uploadedTmpPath): void
+function restore_from_upload(string $dbPath, string $uploadedTmpPath): bool
 {
     DB::reset();
 
@@ -46,6 +46,13 @@ function restore_from_upload(string $dbPath, string $uploadedTmpPath): void
     }
 
     $swapPath = dirname($dbPath) . '/.' . basename($dbPath) . '.restoring';
-    copy($uploadedTmpPath, $swapPath);
-    rename($swapPath, $dbPath);
+    if (!copy($uploadedTmpPath, $swapPath)) {
+        @unlink($swapPath);
+        return false;
+    }
+    if (!rename($swapPath, $dbPath)) {
+        @unlink($swapPath);
+        return false;
+    }
+    return true;
 }

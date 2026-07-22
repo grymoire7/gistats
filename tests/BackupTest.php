@@ -106,4 +106,24 @@ class BackupTest extends TestCase
             if (file_exists($uploadPath)) unlink($uploadPath);
         }
     }
+
+    public function testRestoreFromUploadReturnsFalseOnCopyFailure(): void
+    {
+        // NOTE: we can't compare raw file_get_contents() bytes before/after here.
+        // restore_from_upload() calls DB::reset() unconditionally up front, which
+        // closes the last PDO connection to $this->dbPath and triggers SQLite's
+        // automatic WAL checkpoint -- that legitimately rewrites the main db
+        // file's on-disk bytes (e.g. 4096 -> 28672 bytes in a manual check) even
+        // when nothing goes wrong. So we assert on the thing that actually
+        // matters: the live database is still intact and readable afterward.
+        $nonExistentUpload = sys_get_temp_dir() . '/gistats_does_not_exist_' . uniqid() . '.sqlite';
+
+        $result = @restore_from_upload($this->dbPath, $nonExistentUpload);
+
+        $this->assertFalse($result);
+
+        DB::init(['db_path' => $this->dbPath]);
+        $user = DB::fetch('SELECT * FROM users WHERE username = ?', ['admin']);
+        $this->assertNotNull($user, 'Original data should survive a failed restore attempt.');
+    }
 }
