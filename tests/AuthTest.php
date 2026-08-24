@@ -116,4 +116,17 @@ class AuthTest extends TestCase
         $errors = validate_new_password('password123', 'password123');
         $this->assertEmpty($errors);
     }
+
+    public function testResetPasswordUpdatesHashForExistingUser(): void
+    {
+        $result = reset_password('admin', 'newpassword123');
+        $this->assertTrue($result);
+        $this->assertTrue(login('admin', 'newpassword123'));
+    }
+
+    public function testResetPasswordReturnsFalseForUnknownUser(): void
+    {
+        $result = reset_password('nobody', 'newpassword123');
+        $this->assertFalse($result);
+    }
 }

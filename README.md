@@ -113,13 +113,7 @@ Pushing to `main` runs a two-job pipeline (`.github/workflows/deploy.yml`):
 
 ```bash
 cd ~/magicbydesign.com/gistats
-php -r "
-require 'lib/db.php';
-\$config = require 'config.php';
-DB::init(\$config);
-DB::execute('UPDATE users SET password_hash = ? WHERE username = ?', [password_hash('newpassword', PASSWORD_BCRYPT), 'yourusername']);
-echo \"Password updated.\n\";
-"
+php bin/reset_password yourusername newpassword
 ```
 
 ---

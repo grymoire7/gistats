@@ -13,3 +13,7 @@ run = "npm run test:syntax"
 [tasks."integration-test"]
 description = "Spin up an isolated PHP server and run browser-automated integration tests"
 run = "php tests/integration/run.php"
+
+[tasks.reset_password]
+description = "Reset a user's password: mise run reset_password -- <username> <password>"
+run = "php bin/reset_password"

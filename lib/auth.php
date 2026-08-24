@@ -75,6 +75,16 @@ function change_password(int $userId, string $currentPassword, string $newPasswo
     return true;
 }
 
+function reset_password(string $username, string $newPassword): bool
+{
+    $user = DB::fetch('SELECT id FROM users WHERE username = ?', [$username]);
+    if (!$user) {
+        return false;
+    }
+    DB::execute('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($newPassword, PASSWORD_BCRYPT), $user['id']]);
+    return true;
+}
+
 function validate_new_password(string $newPassword, string $confirm): array
 {
     $errors = [];
