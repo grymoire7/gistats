@@ -1,5 +1,6 @@
 /.superpowers
 /tmp/
+/seed/
 
 .env
 .aider*
