@@ -46,6 +46,11 @@ function delete_entry(int $id, int $userId): bool
     return $stmt->rowCount() > 0;
 }
 
+function delete_all_entries(int $userId): int
+{
+    return DB::execute('DELETE FROM entries WHERE user_id=?', [$userId])->rowCount();
+}
+
 function get_entry(int $id, int $userId): ?array
 {
     return DB::fetch('SELECT * FROM entries WHERE id=? AND user_id=?', [$id, $userId]);
@@ -288,7 +293,7 @@ function normalize_bowelmove_row(array $row, array $colIdx, int $rowNum, string 
     return [
         'occurred_at'      => to_utc($local->format('Y-m-d H:i:s'), $timezone),
         'stool_type'       => (int) $stoolRaw,
-        'duration_seconds' => null,
+        'duration_seconds' => 60,
         'note'             => null,
         'urgency'          => 0,
     ];

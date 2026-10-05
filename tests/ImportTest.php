@@ -285,7 +285,7 @@ class ImportTest extends TestCase
         // January = CST (UTC−6): 09:57 local → 15:57 UTC
         $this->assertEquals('2025-01-09T15:57:00Z', $rows[0]['occurred_at']);
         $this->assertEquals(5, (int) $rows[0]['stool_type']);
-        $this->assertNull($rows[0]['duration_seconds']);
+        $this->assertEquals(60, (int) $rows[0]['duration_seconds']);
         $this->assertNull($rows[0]['note']);
         $this->assertEquals(0, (int) $rows[0]['urgency']);
         // July = CDT (UTC−5): 16:46 local → 21:46 UTC

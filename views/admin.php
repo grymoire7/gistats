@@ -4,6 +4,8 @@ $passwordSuccess = $passwordSuccess ?? null;
 $importResult    = $importResult    ?? null;
 $importError     = $importError     ?? null;
 $restoreError    = $restoreError    ?? null;
+$resetResult     = $resetResult     ?? null;
+$resetError      = $resetError      ?? null;
 ?>
 <h2 style="font-size:18px;font-weight:600;margin:0 0 20px;">Admin</h2>
 
@@ -136,6 +138,37 @@ $restoreError    = $restoreError    ?? null;
             updateButton();
         });
         confirmBox.addEventListener('change', updateButton);
+    }());
+    </script>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h3 style="font-size:15px;font-weight:600;margin:0 0 16px;">Reset All Data</h3>
+    <?php if ($resetResult !== null): ?>
+    <p style="color:var(--color-green);margin:0 0 16px;font-size:14px;">
+        Deleted <?= $resetResult ?> <?= $resetResult === 1 ? 'entry' : 'entries' ?>.
+    </p>
+    <?php elseif ($resetError !== null): ?>
+    <p style="color:var(--color-red);margin:0 0 16px;font-size:14px;"><?= htmlspecialchars($resetError) ?></p>
+    <?php endif; ?>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--color-muted);">
+        Permanently deletes all of your entries. Your account and password are kept.
+        Download a backup first if you might want them back.
+    </p>
+    <form method="post" action="<?= htmlspecialchars($config['base_url']) ?>/admin/reset"
+          style="display:flex;flex-direction:column;gap:14px;">
+        <?= csrf_field() ?>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-muted);">
+            <input type="checkbox" id="reset-confirm-input" name="confirm_reset" value="1" required>
+            I understand this will permanently delete all of my entries.
+        </label>
+        <button type="submit" id="reset-btn" class="btn-danger" style="align-self:flex-start;" disabled>Reset All Data</button>
+    </form>
+    <script>
+    (function () {
+        var box = document.getElementById('reset-confirm-input');
+        var btn = document.getElementById('reset-btn');
+        box.addEventListener('change', function () { btn.disabled = !box.checked; });
     }());
     </script>
 </div>
