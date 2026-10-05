@@ -213,6 +213,9 @@ function import_csv(int $userId, string $csvContent, string $timezone): array
     } elseif ($firstCol === 'Date') {
         $format       = 'poopify';
         $requiredCols = ['Date', 'Time', 'There was stool', 'Consistency', 'Time on toilet', 'Extra notes'];
+    } elseif ($firstCol === 'DateTime') {
+        $format       = 'bowelmove';
+        $requiredCols = ['DateTime', 'Type'];
     } else {
         $result['errors'][] = "Unrecognized CSV format (first column: \"$firstCol\").";
         fclose($buf);
@@ -232,9 +235,11 @@ function import_csv(int $userId, string $csvContent, string $timezone): array
     while (($row = fgetcsv($buf, escape: '\\')) !== false) {
         $rowNum++;
 
-        $normalized = $format === 'native'
-            ? normalize_native_row($row, $colIdx, $rowNum)
-            : normalize_poopify_row($row, $colIdx, $rowNum, $timezone);
+        $normalized = match ($format) {
+            'native'    => normalize_native_row($row, $colIdx, $rowNum),
+            'bowelmove' => normalize_bowelmove_row($row, $colIdx, $rowNum, $timezone),
+            default     => normalize_poopify_row($row, $colIdx, $rowNum, $timezone),
+        };
 
         if ($normalized === null) {
             continue;
@@ -260,4 +265,31 @@ function import_csv(int $userId, string $csvContent, string $timezone): array
 
     fclose($buf);
     return $result;
+}
+
+function normalize_bowelmove_row(array $row, array $colIdx, int $rowNum, string $timezone): array|string
+{
+    $raw       = trim($row[$colIdx['DateTime']] ?? '');
+    $stoolRaw  = trim($row[$colIdx['Type']] ?? '');
+
+    // Timestamps look like "2025-01-09 09:57a" (12-hour clock, a/p suffix)
+    if (!preg_match('/^(\d{4}-\d{2}-\d{2} \d{1,2}:\d{2})([ap])$/i', $raw, $m)) {
+        return "Row $rowNum: invalid DateTime \"$raw\".";
+    }
+    if (!ctype_digit($stoolRaw) || (int) $stoolRaw < 1 || (int) $stoolRaw > 7) {
+        return "Row $rowNum: Type \"$stoolRaw\" is not an integer in range 1–7.";
+    }
+
+    $local = DateTime::createFromFormat('Y-m-d g:ia', $m[1] . strtolower($m[2]) . 'm', new DateTimeZone($timezone));
+    if ($local === false) {
+        return "Row $rowNum: invalid DateTime \"$raw\".";
+    }
+
+    return [
+        'occurred_at'      => to_utc($local->format('Y-m-d H:i:s'), $timezone),
+        'stool_type'       => (int) $stoolRaw,
+        'duration_seconds' => null,
+        'note'             => null,
+        'urgency'          => 0,
+    ];
 }
