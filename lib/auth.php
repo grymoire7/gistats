@@ -7,10 +7,20 @@ function is_logged_in(): bool
     return !empty($_SESSION['user_id']);
 }
 
+function set_base_path(string $basePath): void
+{
+    $GLOBALS['gistats_base_path'] = rtrim($basePath, '/');
+}
+
+function login_url(): string
+{
+    return ($GLOBALS['gistats_base_path'] ?? '') . '/login';
+}
+
 function require_auth(): void
 {
     if (!is_logged_in()) {
-        header('Location: /login');
+        header('Location: ' . login_url());
         exit;
     }
 }

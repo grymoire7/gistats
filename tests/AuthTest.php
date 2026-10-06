@@ -129,4 +129,16 @@ class AuthTest extends TestCase
         $result = reset_password('nobody', 'newpassword123');
         $this->assertFalse($result);
     }
+
+    public function testLoginUrlHonorsBasePath(): void
+    {
+        set_base_path('/gistats');
+        $this->assertSame('/gistats/login', login_url());
+    }
+
+    public function testLoginUrlWithNoBasePath(): void
+    {
+        set_base_path('');
+        $this->assertSame('/login', login_url());
+    }
 }

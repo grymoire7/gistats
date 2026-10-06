@@ -21,6 +21,7 @@ try {
 }
 
 $basePath = rtrim($config['base_url'], '/');
+set_base_path($basePath);
 $requestPath = strip_base_path(strtok($_SERVER['REQUEST_URI'], '?'), $basePath);
 if ($requestPath !== '/') {
     $requestPath = rtrim($requestPath, '/');
