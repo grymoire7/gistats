@@ -233,4 +233,28 @@ class EntriesTest extends TestCase
         $row = get_entry($id, $this->userId);
         $this->assertEquals(1, (int) $row['urgency']);
     }
+
+    public function testDeleteAllEntriesRemovesOnlyThatUsersEntries(): void
+    {
+        DB::execute(
+            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+            ['other', password_hash('x', PASSWORD_BCRYPT)]
+        );
+        $otherId = (int) DB::lastInsertId();
+        foreach (['2026-05-01T10:00:00Z', '2026-05-02T10:00:00Z'] as $ts) {
+            DB::execute('INSERT INTO entries (user_id, occurred_at, stool_type) VALUES (?, ?, ?)', [$this->userId, $ts, 4]);
+        }
+        DB::execute('INSERT INTO entries (user_id, occurred_at, stool_type) VALUES (?, ?, ?)', [$otherId, '2026-05-01T10:00:00Z', 4]);
+
+        $deleted = delete_all_entries($this->userId);
+
+        $this->assertEquals(2, $deleted);
+        $this->assertEquals(0, count_entries($this->userId));
+        $this->assertEquals(1, count_entries($otherId));
+    }
+
+    public function testDeleteAllEntriesWithNoEntriesReturnsZero(): void
+    {
+        $this->assertEquals(0, delete_all_entries($this->userId));
+    }
 }

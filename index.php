@@ -445,6 +445,16 @@ $router->get('/export', function () use ($config) {
     exit;
 });
 
+$router->post('/admin/reset', function () use ($config) {
+    require_auth();
+    require_csrf();
+    if (($_POST['confirm_reset'] ?? '') !== '1') {
+        render('admin', ['resetError' => 'Please confirm before resetting your data.']);
+        return;
+    }
+    render('admin', ['resetResult' => delete_all_entries(current_user_id())]);
+});
+
 $router->post('/import', function () use ($config) {
     require_auth();
     require_csrf();

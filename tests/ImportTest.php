@@ -272,4 +272,65 @@ class ImportTest extends TestCase
         $entry = DB::fetch('SELECT urgency FROM entries WHERE user_id = ?', [$this->userId]);
         $this->assertEquals(0, (int) $entry['urgency']);
     }
+
+    public function testImportBowelMoveHappyPath(): void
+    {
+        $csv = "\"DateTime\",\"Type\"\n\"2025-01-09 09:57a\",\"5\"\n\"2025-07-09 04:46p\",\"1\"\n";
+
+        $result = import_csv($this->userId, $csv, $this->tz);
+        $this->assertEquals(2, $result['imported']);
+        $this->assertEmpty($result['errors']);
+
+        $rows = DB::fetchAll('SELECT * FROM entries WHERE user_id = ? ORDER BY occurred_at', [$this->userId]);
+        // January = CST (UTC−6): 09:57 local → 15:57 UTC
+        $this->assertEquals('2025-01-09T15:57:00Z', $rows[0]['occurred_at']);
+        $this->assertEquals(5, (int) $rows[0]['stool_type']);
+        $this->assertEquals(60, (int) $rows[0]['duration_seconds']);
+        $this->assertNull($rows[0]['note']);
+        $this->assertEquals(0, (int) $rows[0]['urgency']);
+        // July = CDT (UTC−5): 16:46 local → 21:46 UTC
+        $this->assertEquals('2025-07-09T21:46:00Z', $rows[1]['occurred_at']);
+        $this->assertEquals(1, (int) $rows[1]['stool_type']);
+    }
+
+    public function testImportBowelMoveNoonAndMidnightMeridiem(): void
+    {
+        $csv = "\"DateTime\",\"Type\"\n\"2025-01-09 12:05a\",\"4\"\n\"2025-01-09 12:05p\",\"4\"\n";
+
+        $result = import_csv($this->userId, $csv, $this->tz);
+        $this->assertEquals(2, $result['imported']);
+
+        $rows = DB::fetchAll('SELECT occurred_at FROM entries WHERE user_id = ? ORDER BY occurred_at', [$this->userId]);
+        $this->assertEquals('2025-01-09T06:05:00Z', $rows[0]['occurred_at']); // 12:05 AM CST
+        $this->assertEquals('2025-01-09T18:05:00Z', $rows[1]['occurred_at']); // 12:05 PM CST
+    }
+
+    public function testImportBowelMoveTwiceProducesNoDuplicates(): void
+    {
+        $csv = "\"DateTime\",\"Type\"\n\"2025-01-09 09:57a\",\"5\"\n";
+        import_csv($this->userId, $csv, $this->tz);
+        $result = import_csv($this->userId, $csv, $this->tz);
+        $this->assertEquals(0, $result['imported']);
+        $this->assertEquals(1, $result['skipped_duplicates']);
+    }
+
+    public function testImportBowelMoveBadRowSkipsRowWithError(): void
+    {
+        $csv = "\"DateTime\",\"Type\"\n\"garbage\",\"4\"\n\"2025-01-09 09:57a\",\"9\"\n";
+        $result = import_csv($this->userId, $csv, $this->tz);
+        $this->assertEquals(0, $result['imported']);
+        $this->assertCount(2, $result['errors']);
+    }
+
+    public function testImportBowelMoveSeedFileImportsCleanly(): void
+    {
+        $path = __DIR__ . '/../seed/BowelMove_20250928.csv';
+        if (!file_exists($path)) {
+            $this->markTestSkipped('seed/ file not present');
+        }
+        $result = import_csv($this->userId, file_get_contents($path), $this->tz);
+        $this->assertEmpty($result['errors']);
+        $this->assertEquals(0, $result['skipped_duplicates']);
+        $this->assertEquals(count(file($path)) - 1, $result['imported']);
+    }
 }
