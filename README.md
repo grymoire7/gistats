@@ -122,10 +122,10 @@ php bin/reset_password yourusername newpassword
 
 Run `pitchfork start` to run the app locally. It starts two daemons:
 
-- `web`: serves the app with PHP's built-in server at `http://localhost:8000`.
+- `web`: serves the app with PHP's built-in server at `http://localhost:8300`.
 - `assets`: watches `css/input.css` and rebuilds the compiled Tailwind CSS on changes.
 
-Open `http://localhost:8000` and sign in with the credentials you set up in Setup.
+Open `http://localhost:8300` and sign in with the credentials you set up in Setup.
 
 Other tasks, defined in `mise.toml`:
 

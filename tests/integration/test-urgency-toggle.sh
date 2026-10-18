@@ -2,9 +2,7 @@
 # Tests: urgency toggle on the entry form persists through create and edit
 set -euo pipefail
 
-BASE_URL="${GISTATS_URL:-http://localhost:8000}"
-USERNAME="${GISTATS_USER:-admin}"
-PASSWORD="${GISTATS_PASS:-secret}"
+source "$(dirname "${BASH_SOURCE[0]}")/config.sh"
 
 echo "=== test-urgency-toggle ==="
 

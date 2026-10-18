@@ -4,7 +4,7 @@
     "scripts": {
         "build:css": "tailwindcss -i css/input.css -o css/compiled.css --minify",
         "watch:css": "tailwindcss -i css/input.css -o css/compiled.css --watch",
-        "server:start": "php -S localhost:8000 server.php 2>&1",
+        "server:start": "php -S localhost:8300 server.php 2>&1",
         "test": "vendor/bin/phpunit",
         "test:syntax": "git ls-files '*.php' | xargs -n1 -P4 php -l"
     },
