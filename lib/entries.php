@@ -85,6 +85,23 @@ function get_entries_for_month(int $userId, int $year, int $month, string $timez
     );
 }
 
+function get_entries_in_range(int $userId, string $startDate, string $endDate, string $timezone): array
+{
+    $start = to_utc($startDate . 'T00:00:00', $timezone);
+    $end   = to_utc($endDate . 'T23:59:59', $timezone);
+    return DB::fetchAll(
+        'SELECT * FROM entries WHERE user_id=? AND occurred_at>=? AND occurred_at<=?
+         ORDER BY occurred_at ASC',
+        [$userId, $start, $end]
+    );
+}
+
+function get_earliest_entry_date(int $userId, string $timezone): ?string
+{
+    $row = DB::fetch('SELECT MIN(occurred_at) AS first FROM entries WHERE user_id=?', [$userId]);
+    return $row && $row['first'] ? from_utc($row['first'], $timezone)->format('Y-m-d') : null;
+}
+
 function get_all_entries(int $userId): array
 {
     return DB::fetchAll(

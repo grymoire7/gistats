@@ -1,17 +1,50 @@
+<h2 style="font-size:20px;font-weight:600;margin:0 0 20px;">Statistics</h2>
+
+<?php if ($earliest === null): ?>
+<p style="color:var(--color-muted);">No entries yet. Log some entries to see statistics.</p>
+<?php else:
+    $baseUrl     = htmlspecialchars($config['base_url']);
+    $selectedN   = str_starts_with((string) $preset, 'last:') ? (int) substr($preset, 5) : 30;
+    $lastActive  = str_starts_with((string) $preset, 'last:');
+    $allActive   = $preset === 'all';
+?>
+<form method="get" action="<?= $baseUrl ?>/stats" class="card" style="margin-bottom:20px;">
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <label style="flex:1;font-size:12px;color:var(--color-muted);">Start
+            <input class="form-input" type="date" name="start" value="<?= htmlspecialchars($range['start']) ?>"
+                   max="<?= htmlspecialchars($today) ?>" onchange="this.form.submit()">
+        </label>
+        <label style="flex:1;font-size:12px;color:var(--color-muted);">End
+            <input class="form-input" type="date" name="end" value="<?= htmlspecialchars($range['end']) ?>"
+                   max="<?= htmlspecialchars($today) ?>" onchange="this.form.submit()">
+        </label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="submit" name="preset" value="last" aria-pressed="<?= $lastActive ? 'true' : 'false' ?>"
+                class="<?= $lastActive ? 'btn-primary' : 'btn-outline' ?>">Last</button>
+        <select name="days" class="form-input" style="width:auto;" aria-label="Number of days"
+                onchange="this.form.requestSubmit(this.form.querySelector('[value=last]'))">
+            <?php foreach (STATS_RANGE_DAY_OPTIONS as $n): ?>
+            <option value="<?= $n ?>"<?= $n === $selectedN ? ' selected' : '' ?>><?= $n ?></option>
+            <?php endforeach; ?>
+        </select>
+        <span style="font-size:14px;">days</span>
+        <button type="submit" name="preset" value="all" aria-pressed="<?= $allActive ? 'true' : 'false' ?>"
+                class="<?= $allActive ? 'btn-primary' : 'btn-outline' ?>" style="margin-left:auto;">All Time</button>
+    </div>
+</form>
+
+<?php if (empty($types)): ?>
+<p style="color:var(--color-muted);">No entries in this range. Try widening the dates.</p>
+<?php else: ?>
 <?php
-$labels   = range(1, count($types));
-$jsonAvg  = json_encode(array_values($movingAvg));
-$jsonLabels = json_encode($labels);
+$jsonAvg        = json_encode(array_values($movingAvg));
+$jsonLabels     = json_encode(range(1, count($types)));
 $jsonFreqLabels = json_encode(array_map(fn($t) => 'Type ' . $t, array_keys($typeFreq)));
 $jsonFreqData   = json_encode(array_values($typeFreq));
 $jsonDailyLabels = json_encode(array_keys($dailyFreq));
 $jsonDailyData   = json_encode(array_values($dailyFreq));
 ?>
-<h2 style="font-size:20px;font-weight:600;margin:0 0 20px;">Statistics</h2>
-
-<?php if (empty($types)): ?>
-<p style="color:var(--color-muted);">No entries yet. Log some entries to see statistics.</p>
-<?php else: ?>
 
 <div class="card" style="margin-bottom:20px;">
     <h3 style="font-size:14px;font-weight:600;margin:0 0 12px;">Moving Average (7-event window)</h3>
@@ -25,7 +58,7 @@ $jsonDailyData   = json_encode(array_values($dailyFreq));
 </div>
 
 <div class="card" style="margin-bottom:20px;">
-    <h3 style="font-size:14px;font-weight:600;margin:0 0 12px;">Daily Frequency (last 30 days)</h3>
+    <h3 style="font-size:14px;font-weight:600;margin:0 0 12px;">Daily Frequency</h3>
     <canvas id="chart-daily" height="200"></canvas>
 </div>
 
@@ -102,4 +135,5 @@ new Chart(document.getElementById('chart-daily'), {
     }
 });
 </script>
+<?php endif; ?>
 <?php endif; ?>

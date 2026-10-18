@@ -225,12 +225,16 @@ $router->get('/stats', function () use ($config) {
     require_auth();
     $userId  = current_user_id();
     $tz      = $config['timezone'];
-    $all     = get_all_entries($userId);
-    $types   = array_column($all, 'stool_type');
-    $movingAvg   = moving_average(array_map('intval', $types), 7);
-    $typeFreq    = type_frequency($all);
-    $dailyFreq   = daily_frequency($all, $tz, 30);
-    render('stats', compact('movingAvg', 'types', 'typeFreq', 'dailyFreq'));
+    $today    = (new DateTime('now', new DateTimeZone($tz)))->format('Y-m-d');
+    $earliest = get_earliest_entry_date($userId, $tz);
+    $range    = stats_range_from_request($_GET, $today, $earliest);
+    $preset   = stats_range_preset($range, $today, $earliest, STATS_RANGE_DAY_OPTIONS);
+    $entries  = get_entries_in_range($userId, $range['start'], $range['end'], $tz);
+    $types    = array_column($entries, 'stool_type');
+    $movingAvg = moving_average(array_map('intval', $types), 7);
+    $typeFreq  = type_frequency($entries);
+    $dailyFreq = daily_frequency($entries, $tz, $range['start'], $range['end']);
+    render('stats', compact('movingAvg', 'types', 'typeFreq', 'dailyFreq', 'range', 'today', 'earliest', 'preset'));
 });
 
 // Blank new-entry form (used by Cancel in edit mode)

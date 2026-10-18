@@ -157,6 +157,39 @@ class EntriesTest extends TestCase
         $this->assertCount(1, $results);
     }
 
+    public function testGetEntriesInRangeIncludesBothEndDatesInclusive(): void
+    {
+        create_entry($this->userId, ['occurred_at' => '2026-05-11T23:59:00', 'stool_type' => 1], $this->tz);
+        create_entry($this->userId, ['occurred_at' => '2026-05-12T00:00:00', 'stool_type' => 2], $this->tz);
+        create_entry($this->userId, ['occurred_at' => '2026-05-14T23:59:00', 'stool_type' => 3], $this->tz);
+        create_entry($this->userId, ['occurred_at' => '2026-05-15T00:00:00', 'stool_type' => 4], $this->tz);
+        $results = get_entries_in_range($this->userId, '2026-05-12', '2026-05-14', $this->tz);
+        $this->assertSame([2, 3], array_map('intval', array_column($results, 'stool_type')));
+    }
+
+    public function testGetEntriesInRangeIsOrderedOldestFirstAndScopedToUser(): void
+    {
+        DB::execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', ['other', 'x']);
+        create_entry($this->userId, ['occurred_at' => '2026-05-13T10:00:00', 'stool_type' => 5], $this->tz);
+        create_entry($this->userId, ['occurred_at' => '2026-05-12T10:00:00', 'stool_type' => 2], $this->tz);
+        create_entry(2, ['occurred_at' => '2026-05-12T11:00:00', 'stool_type' => 7], $this->tz);
+        $results = get_entries_in_range($this->userId, '2026-05-12', '2026-05-13', $this->tz);
+        $this->assertSame([2, 5], array_map('intval', array_column($results, 'stool_type')));
+    }
+
+    public function testGetEarliestEntryDateReturnsLocalDate(): void
+    {
+        // 23:30 New York on May 11 is already May 12 in UTC; local date must win.
+        create_entry($this->userId, ['occurred_at' => '2026-05-11T23:30:00', 'stool_type' => 4], $this->tz);
+        create_entry($this->userId, ['occurred_at' => '2026-06-01T10:00:00', 'stool_type' => 4], $this->tz);
+        $this->assertSame('2026-05-11', get_earliest_entry_date($this->userId, $this->tz));
+    }
+
+    public function testGetEarliestEntryDateIsNullWithNoEntries(): void
+    {
+        $this->assertNull(get_earliest_entry_date($this->userId, $this->tz));
+    }
+
     public function testCountEntries(): void
     {
         for ($i = 0; $i < 4; $i++) {
