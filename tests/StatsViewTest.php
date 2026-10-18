@@ -151,8 +151,8 @@ class StatsViewTest extends TestCase
     {
         $html = $this->render();
         $this->assertSame(1, substr_count($html, 'class="heatmap-dot"'));
-        $this->assertStringContainsString('aria-label="2026-05-30: Type 6, urgent"', $html);
-        $this->assertStringContainsString('aria-label="2026-05-29: Type 3"', $html);
+        $this->assertStringContainsString('aria-label="Sat, May 30, 2026: Type 6, urgent"', $html);
+        $this->assertStringContainsString('aria-label="Fri, May 29, 2026: Type 3"', $html);
     }
 
     public function testDayWithoutEntriesIsLabeledAndHasNoTypeColor(): void
@@ -160,7 +160,7 @@ class StatsViewTest extends TestCase
         $html = $this->render([
             'heatmap' => build_heatmap([], 'America/Chicago', '2026-05-30', '2026-05-30'),
         ]);
-        $this->assertStringContainsString('aria-label="2026-05-30: no entries"', $html);
+        $this->assertStringContainsString('aria-label="Sat, May 30, 2026: no entries"', $html);
         $this->assertStringNotContainsString('data-type=', $html);
     }
 
@@ -174,12 +174,50 @@ class StatsViewTest extends TestCase
         $this->assertStringContainsString('Urgent', $html);
     }
 
-    public function testWeekdayRowsArePlacedSundayFirst(): void
+    public function testCellsArePlacedOnTheGridByWeekdayRowAndWeekColumn(): void
     {
-        // 2026-05-30 is a Saturday, so the grid's single column has 6 blanks before it.
+        // Rows 2-8 are Sun-Sat (row 1 is the month labels); column 1 is the weekday labels.
+        $html = $this->render();
+        $this->assertMatchesRegularExpression('/data-date="2026-05-29"[^>]*grid-column:2;grid-row:7;/', $html); // Fri
+        $this->assertMatchesRegularExpression('/data-date="2026-05-30"[^>]*grid-column:2;grid-row:8;/', $html); // Sat
+    }
+
+    public function testWeekdayLabelsAreShownForMonWedFri(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString('class="heatmap-weekday" style="grid-row:3;">Mon<', $html);
+        $this->assertStringContainsString('class="heatmap-weekday" style="grid-row:5;">Wed<', $html);
+        $this->assertStringContainsString('class="heatmap-weekday" style="grid-row:7;">Fri<', $html);
+        $this->assertStringNotContainsString('>Tue<', $html);
+    }
+
+    public function testMonthLabelsSitAboveTheirWeekColumn(): void
+    {
         $html = $this->render([
-            'heatmap' => build_heatmap([], 'America/Chicago', '2026-05-30', '2026-05-30'),
+            'heatmap' => build_heatmap([], 'America/Chicago', '2026-05-03', '2026-06-13'),
         ]);
-        $this->assertSame(6, substr_count($html, 'class="heatmap-blank"'));
+        $this->assertStringContainsString('class="heatmap-month" style="grid-column:2;">May<', $html);
+        $this->assertStringContainsString('class="heatmap-month" style="grid-column:6;">Jun<', $html);
+    }
+
+    public function testCellsHaveCustomTooltipTextAndAreFocusable(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString('id="heatmap-tooltip"', $html);
+        $this->assertStringContainsString('data-tip="Sat, May 30, 2026: Type 6, urgent"', $html);
+        $this->assertSame(2, substr_count($html, 'class="heatmap-cell"'));
+        $this->assertSame(2, substr_count($html, 'tabindex="0"'));
+    }
+
+    public function testCellsNoLongerUseTheSlowNativeTitleTooltip(): void
+    {
+        $html = $this->render();
+        $this->assertDoesNotMatchRegularExpression('/class="heatmap-cell"[^>]*\stitle=/', $html);
+    }
+
+    public function testUrgentSegmentIsFirstDatasetSoItSitsOnTheAxis(): void
+    {
+        $html = $this->render();
+        $this->assertLessThan(strpos($html, "label: 'Not urgent'"), strpos($html, "label: 'Urgent'"));
     }
 }

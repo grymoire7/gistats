@@ -68,29 +68,37 @@ $jsonDailyNormal = json_encode(array_values(array_map(
 </div>
 
 <style>
-    .heatmap-grid { display:grid; grid-auto-flow:column; grid-template-rows:repeat(7, 14px); grid-auto-columns:14px; gap:3px; width:max-content; }
-    .heatmap-cell { position:relative; width:14px; height:14px; border-radius:3px; }
-    .heatmap-blank { width:14px; height:14px; }
+    .heatmap-grid { display:grid; grid-template-rows:14px repeat(7, 14px); gap:3px; width:max-content; }
+    .heatmap-month, .heatmap-weekday { font-size:10px; line-height:14px; color:var(--color-muted); white-space:nowrap; }
+    .heatmap-weekday { grid-column:1; position:sticky; left:0; z-index:1; background:var(--color-surface); }
+    .heatmap-cell { position:relative; width:14px; height:14px; border-radius:3px; cursor:default; }
+    .heatmap-cell:focus-visible { outline:2px solid var(--color-text); outline-offset:1px; }
     .heatmap-dot { position:absolute; top:50%; left:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%;
                    background:<?= URGENCY_COLOR ?>; box-shadow:0 0 0 1px rgba(0,0,0,0.6); }
     .heatmap-swatch { display:inline-block; width:14px; height:14px; border-radius:3px; }
     .heatmap-key-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:<?= URGENCY_COLOR ?>; }
+    #heatmap-tooltip { position:fixed; z-index:60; pointer-events:none; padding:4px 8px; border-radius:6px; font-size:12px; white-space:nowrap;
+                       background:var(--color-canvas); color:var(--color-text); border:1px solid var(--color-border); box-shadow:0 2px 8px rgba(0,0,0,0.5); }
 </style>
 <div class="card" style="margin-bottom:20px;">
     <h3 style="font-size:14px;font-weight:600;margin:0 0 4px;">Daily Heat Map</h3>
     <p style="font-size:11px;color:var(--color-muted);margin:0 0 12px;">Each day is colored by its largest stool type</p>
     <div style="overflow-x:auto;padding-bottom:8px;">
-        <div class="heatmap-grid">
-            <?php foreach ($heatmap as $week): foreach ($week as $day): ?>
-                <?php if ($day === null): ?>
-            <div class="heatmap-blank"></div>
-                <?php else:
-                    $label = $day['date'] . ': ' . ($day['type'] === null ? 'no entries' : 'Type ' . $day['type'] . ($day['urgent'] ? ', urgent' : ''));
-                    $bg    = $day['type'] === null ? 'var(--color-border)' : HEATMAP_TYPE_COLORS[$day['type']];
-                ?>
-            <div class="heatmap-cell" data-date="<?= htmlspecialchars($day['date']) ?>"<?= $day['type'] !== null ? ' data-type="' . $day['type'] . '"' : '' ?> role="img"
-                 aria-label="<?= htmlspecialchars($label) ?>" title="<?= htmlspecialchars($label) ?>" style="background:<?= $bg ?>;"><?php if ($day['urgent']): ?><span class="heatmap-dot"></span><?php endif; ?></div>
-                <?php endif; ?>
+        <div class="heatmap-grid" style="grid-template-columns:28px repeat(<?= count($heatmap) ?>, 14px);">
+            <?php foreach (heatmap_month_labels($heatmap) as $m): ?>
+            <span class="heatmap-month" style="grid-column:<?= $m['col'] + 2 ?>;"><?= htmlspecialchars($m['label']) ?></span>
+            <?php endforeach; ?>
+            <?php foreach ([1 => 'Mon', 3 => 'Wed', 5 => 'Fri'] as $row => $name): ?>
+            <span class="heatmap-weekday" style="grid-row:<?= $row + 2 ?>;"><?= $name ?></span>
+            <?php endforeach; ?>
+            <?php foreach ($heatmap as $col => $week): foreach ($week as $row => $day): if ($day === null) continue;
+                $label = (new DateTimeImmutable($day['date']))->format('D, M j, Y') . ': '
+                       . ($day['type'] === null ? 'no entries' : 'Type ' . $day['type'] . ($day['urgent'] ? ', urgent' : ''));
+                $bg    = $day['type'] === null ? 'var(--color-border)' : HEATMAP_TYPE_COLORS[$day['type']];
+            ?>
+            <div class="heatmap-cell" data-date="<?= htmlspecialchars($day['date']) ?>"<?= $day['type'] !== null ? ' data-type="' . $day['type'] . '"' : '' ?> role="img" tabindex="0"
+                 aria-label="<?= htmlspecialchars($label) ?>" data-tip="<?= htmlspecialchars($label) ?>"
+                 style="grid-column:<?= $col + 2 ?>;grid-row:<?= $row + 2 ?>;background:<?= $bg ?>;"><?php if ($day['urgent']): ?><span class="heatmap-dot"></span><?php endif; ?></div>
             <?php endforeach; endforeach; ?>
         </div>
     </div>
@@ -104,6 +112,31 @@ $jsonDailyNormal = json_encode(array_values(array_map(
     </div>
 </div>
 
+<div id="heatmap-tooltip" role="tooltip" hidden></div>
+<script>
+(function () {
+    const tip = document.getElementById('heatmap-tooltip');
+    function show(cell) {
+        tip.textContent = cell.dataset.tip;
+        tip.hidden = false;
+        const r = cell.getBoundingClientRect();
+        const left = r.left + r.width / 2 - tip.offsetWidth / 2;
+        tip.style.left = Math.max(8, Math.min(left, document.documentElement.clientWidth - tip.offsetWidth - 8)) + 'px';
+        const above = r.top - tip.offsetHeight - 6;
+        tip.style.top = (above >= 0 ? above : r.bottom + 6) + 'px';
+    }
+    function hide() { tip.hidden = true; }
+    document.querySelectorAll('.heatmap-cell').forEach(function (cell) {
+        cell.addEventListener('mouseenter', function () { show(cell); });
+        cell.addEventListener('mouseleave', hide);
+        cell.addEventListener('focus', function () { show(cell); });
+        cell.addEventListener('blur', hide);
+        cell.addEventListener('click', function (e) { show(cell); e.stopPropagation(); });
+    });
+    document.addEventListener('click', hide);
+    window.addEventListener('scroll', hide, true);
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const green  = '#00754A';
@@ -164,14 +197,14 @@ new Chart(document.getElementById('chart-freq'), {
     }
 });
 
-// Daily frequency (stacked: urgent entries in yellow)
+// Daily frequency (stacked; urgent first so it sits on the x-axis)
 new Chart(document.getElementById('chart-daily'), {
     type: 'bar',
     data: {
         labels: <?= $jsonDailyLabels ?>,
         datasets: [
-            { label: 'Not urgent', data: dailyNotUrgent, backgroundColor: green },
             { label: 'Urgent', data: dailyUrgent, backgroundColor: urgentColor },
+            { label: 'Not urgent', data: dailyNotUrgent, backgroundColor: green },
         ]
     },
     options: {

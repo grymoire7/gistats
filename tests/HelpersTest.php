@@ -282,6 +282,33 @@ class HelpersTest extends TestCase
         $this->assertNull($weeks[0][1]['type']);
     }
 
+    public function testHeatmapMonthLabelsMarkTheColumnContainingTheFirst(): void
+    {
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-03', '2026-06-13');
+        $this->assertSame(
+            [['col' => 0, 'label' => 'May'], ['col' => 4, 'label' => 'Jun']],
+            heatmap_month_labels($weeks)
+        );
+    }
+
+    public function testHeatmapMonthLabelsForSingleMonthIsJustThatMonth(): void
+    {
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-03', '2026-05-30');
+        $this->assertSame([['col' => 0, 'label' => 'May']], heatmap_month_labels($weeks));
+    }
+
+    public function testHeatmapMonthLabelsDropsAnEarlierLabelThatWouldCollide(): void
+    {
+        // Starts Wed May 27; the very next column holds Jun 1, so "May" would overlap "Jun".
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-27', '2026-06-10');
+        $this->assertSame([['col' => 1, 'label' => 'Jun']], heatmap_month_labels($weeks));
+    }
+
+    public function testHeatmapMonthLabelsEmptyForNoWeeks(): void
+    {
+        $this->assertSame([], heatmap_month_labels([]));
+    }
+
     public function testHeatmapHasAColorForEveryStoolType(): void
     {
         $this->assertSame([1, 2, 3, 4, 5, 6, 7], array_keys(HEATMAP_TYPE_COLORS));

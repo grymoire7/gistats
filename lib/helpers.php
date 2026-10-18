@@ -174,6 +174,37 @@ function build_heatmap(array $entries, string $timezone, string $startDate, stri
     return $weeks;
 }
 
+// Month labels for the heat map: one over the first column, then one over each column
+// holding a 1st. An earlier label closer than 3 columns to the next one is dropped.
+function heatmap_month_labels(array $weeks): array
+{
+    $candidates = [];
+    foreach ($weeks as $col => $week) {
+        $days = array_values(array_filter($week));
+        if (!$days) continue;
+        $label = null;
+        if ($col === 0) {
+            $label = (new DateTimeImmutable($days[0]['date']))->format('M');
+        }
+        foreach ($days as $day) {
+            if (substr($day['date'], 8, 2) === '01') {
+                $label = (new DateTimeImmutable($day['date']))->format('M');
+            }
+        }
+        if ($label !== null) $candidates[] = ['col' => $col, 'label' => $label];
+    }
+
+    $kept = [];
+    $next = null;
+    foreach (array_reverse($candidates) as $c) {
+        if ($next === null || $next - $c['col'] >= 3) {
+            array_unshift($kept, $c);
+            $next = $c['col'];
+        }
+    }
+    return $kept;
+}
+
 const STATS_RANGE_DAY_OPTIONS = [30, 60, 90, 180, 365];
 
 function parse_ymd(?string $value): ?string
