@@ -435,6 +435,53 @@ class HelpersTest extends TestCase
         $this->assertSame(['start' => '2025-01-01', 'end' => '2026-05-30'], $r);
     }
 
+    public function testStatsRangeFromRequestIgnoresArrayValuesInsteadOfCrashing(): void
+    {
+        $r = stats_range_from_request(['start' => ['x'], 'end' => ['y']], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestClampsExplicitStartToEarliestEntry(): void
+    {
+        $r = stats_range_from_request(['start' => '0001-01-01'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2025-01-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestWithNoDataCollapsesExplicitStartToEnd(): void
+    {
+        $r = stats_range_from_request(['start' => '1900-01-01'], '2026-05-30', null);
+        $this->assertSame(['start' => '2026-05-30', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestRangeEntirelyBeforeEarliestCollapsesToEnd(): void
+    {
+        $r = stats_range_from_request(['start' => '2020-01-01', 'end' => '2020-02-01'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2020-02-01', 'end' => '2020-02-01'], $r);
+    }
+
+    public function testStatsRangeFromRequestDefaultIsNotClampedToEarliest(): void
+    {
+        // A brand-new user (3 days of data) still gets "Last 30 days", not "All Time".
+        $r = stats_range_from_request([], '2026-05-30', '2026-05-28');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testDailyFrequencyKeepsLastDayWhenMidnightDoesNotExist(): void
+    {
+        // Havana springs forward at 00:00 on 2026-03-08, so that midnight is skipped.
+        $freq = daily_frequency([], 'America/Havana', '2026-03-05', '2026-03-12');
+        $this->assertSame(8, count($freq));
+        $this->assertSame('2026-03-12', array_key_last($freq));
+    }
+
+    public function testHeatmapKeepsLastDayWhenMidnightDoesNotExist(): void
+    {
+        $weeks = build_heatmap([], 'America/Havana', '2026-03-05', '2026-03-12');
+        $dates = array_column(array_filter(array_merge(...$weeks)), 'date');
+        $this->assertSame(8, count($dates));
+        $this->assertSame('2026-03-12', end($dates));
+    }
+
     public function testLastNDaysRangeEndsToday(): void
     {
         $this->assertSame(

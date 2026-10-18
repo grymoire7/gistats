@@ -106,10 +106,10 @@ function type_frequency(array $entries): array
 
 function daily_frequency(array $entries, string $timezone, string $startDate, string $endDate): array
 {
-    $tz     = new DateTimeZone($timezone);
+    $utc    = new DateTimeZone('UTC');   // calendar-day math in UTC: some zones skip local midnight
     $result = [];
-    $day    = new DateTimeImmutable($startDate, $tz);
-    $last   = new DateTimeImmutable($endDate, $tz);
+    $day    = new DateTimeImmutable($startDate, $utc);
+    $last   = new DateTimeImmutable($endDate, $utc);
     for (; $day <= $last; $day = $day->modify('+1 day')) {
         $result[$day->format('Y-m-d')] = 0;
     }
@@ -151,9 +151,9 @@ function build_heatmap(array $entries, string $timezone, string $startDate, stri
         $byDate[$date]['urgent'] = ($byDate[$date]['urgent'] ?? false) || !empty($entry['urgency']);
     }
 
-    $tz    = new DateTimeZone($timezone);
-    $day   = new DateTimeImmutable($startDate, $tz);
-    $last  = new DateTimeImmutable($endDate, $tz);
+    $utc   = new DateTimeZone('UTC');   // calendar-day math in UTC: some zones skip local midnight
+    $day   = new DateTimeImmutable($startDate, $utc);
+    $last  = new DateTimeImmutable($endDate, $utc);
     $weeks = [];
     $week  = array_fill(0, (int) $day->format('w'), null);
     for (; $day <= $last; $day = $day->modify('+1 day')) {
@@ -246,7 +246,16 @@ function stats_range_from_request(array $query, string $today, ?string $earliest
         $days = (int) ($query['days'] ?? 30);
         return last_n_days_range(in_array($days, STATS_RANGE_DAY_OPTIONS, true) ? $days : 30, $today);
     }
-    return resolve_stats_range($query['start'] ?? null, $query['end'] ?? null, $today);
+    $start = is_string($query['start'] ?? null) ? $query['start'] : null;
+    $end   = is_string($query['end'] ?? null) ? $query['end'] : null;
+    $range = resolve_stats_range($start, $end, $today);
+
+    // An explicit start can't reach back past the data (keeps absurd years from building
+    // millions of day cells). The default range is left alone so new users still get "Last 30".
+    if (parse_ymd($start) !== null) {
+        $range['start'] = min(max($range['start'], $earliest ?? $range['end']), $range['end']);
+    }
+    return $range;
 }
 
 function stats_range_preset(array $range, string $today, ?string $earliest, array $dayOptions): ?string

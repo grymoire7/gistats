@@ -9,6 +9,7 @@
     $allActive   = $preset === 'all';
 ?>
 <form method="get" action="<?= $baseUrl ?>/stats" class="card" style="margin-bottom:20px;">
+    <button type="submit" hidden aria-hidden="true" tabindex="-1"></button><?php /* default button, so Enter in a date input applies the dates */ ?>
     <div style="display:flex;gap:12px;margin-bottom:12px;">
         <label style="flex:1;font-size:12px;color:var(--color-muted);">Start
             <input class="form-input" type="date" name="start" value="<?= htmlspecialchars($range['start']) ?>"

@@ -227,4 +227,13 @@ class StatsViewTest extends TestCase
         $this->assertStringContainsString('Each day is colored by its loosest stool type', $html);
         $this->assertStringNotContainsString('largest stool type', $html);
     }
+
+    public function testEnterInADateInputDoesNotTriggerAPreset(): void
+    {
+        // Implicit submission uses the first submit button, so it must be a neutral one.
+        $html = $this->render();
+        preg_match('/<button[^>]*type="submit"[^>]*>/', $html, $m);
+        $this->assertStringNotContainsString('name="preset"', $m[0]);
+        $this->assertStringContainsString('hidden', $m[0]);
+    }
 }
