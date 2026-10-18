@@ -151,7 +151,7 @@ class StatsViewTest extends TestCase
     {
         $html = $this->render();
         $this->assertSame(1, substr_count($html, 'class="heatmap-dot"'));
-        $this->assertStringContainsString('aria-label="Sat, May 30, 2026: Type 6, urgent"', $html);
+        $this->assertStringContainsString('aria-label="Sat, May 30, 2026: Type 6, urgency"', $html);
         $this->assertStringContainsString('aria-label="Fri, May 29, 2026: Type 3"', $html);
     }
 
@@ -204,7 +204,7 @@ class StatsViewTest extends TestCase
     {
         $html = $this->render();
         $this->assertStringContainsString('id="heatmap-tooltip"', $html);
-        $this->assertStringContainsString('data-tip="Sat, May 30, 2026: Type 6, urgent"', $html);
+        $this->assertStringContainsString('data-tip="Sat, May 30, 2026: Type 6, urgency"', $html);
         $this->assertSame(2, substr_count($html, 'class="heatmap-cell"'));
         $this->assertSame(2, substr_count($html, 'tabindex="0"'));
     }
@@ -219,5 +219,12 @@ class StatsViewTest extends TestCase
     {
         $html = $this->render();
         $this->assertLessThan(strpos($html, "label: 'Not urgent'"), strpos($html, "label: 'Urgent'"));
+    }
+
+    public function testHeatmapSubtitleSaysLoosestStoolType(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString('Each day is colored by its loosest stool type', $html);
+        $this->assertStringNotContainsString('largest stool type', $html);
     }
 }

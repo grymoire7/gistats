@@ -82,7 +82,7 @@ $jsonDailyNormal = json_encode(array_values(array_map(
 </style>
 <div class="card" style="margin-bottom:20px;">
     <h3 style="font-size:14px;font-weight:600;margin:0 0 4px;">Daily Heat Map</h3>
-    <p style="font-size:11px;color:var(--color-muted);margin:0 0 12px;">Each day is colored by its largest stool type</p>
+    <p style="font-size:11px;color:var(--color-muted);margin:0 0 12px;">Each day is colored by its loosest stool type</p>
     <div style="overflow-x:auto;padding-bottom:8px;">
         <div class="heatmap-grid" style="grid-template-columns:28px repeat(<?= count($heatmap) ?>, 14px);">
             <?php foreach (heatmap_month_labels($heatmap) as $m): ?>
@@ -93,7 +93,7 @@ $jsonDailyNormal = json_encode(array_values(array_map(
             <?php endforeach; ?>
             <?php foreach ($heatmap as $col => $week): foreach ($week as $row => $day): if ($day === null) continue;
                 $label = (new DateTimeImmutable($day['date']))->format('D, M j, Y') . ': '
-                       . ($day['type'] === null ? 'no entries' : 'Type ' . $day['type'] . ($day['urgent'] ? ', urgent' : ''));
+                       . ($day['type'] === null ? 'no entries' : 'Type ' . $day['type'] . ($day['urgent'] ? ', urgency' : ''));
                 $bg    = $day['type'] === null ? 'var(--color-border)' : HEATMAP_TYPE_COLORS[$day['type']];
             ?>
             <div class="heatmap-cell" data-date="<?= htmlspecialchars($day['date']) ?>"<?= $day['type'] !== null ? ' data-type="' . $day['type'] . '"' : '' ?> role="img" tabindex="0"
