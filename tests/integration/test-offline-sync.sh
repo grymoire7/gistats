@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${GISTATS_URL:-http://localhost:8000}"
-USERNAME="${GISTATS_USER:-admin}"
-PASSWORD="${GISTATS_PASS:-secret}"
+source "$(dirname "${BASH_SOURCE[0]}")/config.sh"
 
 echo "=== test-offline-sync ==="
 
