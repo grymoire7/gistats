@@ -106,10 +106,10 @@ function type_frequency(array $entries): array
 
 function daily_frequency(array $entries, string $timezone, string $startDate, string $endDate): array
 {
-    $tz     = new DateTimeZone($timezone);
+    $utc    = new DateTimeZone('UTC');   // calendar-day math in UTC: some zones skip local midnight
     $result = [];
-    $day    = new DateTimeImmutable($startDate, $tz);
-    $last   = new DateTimeImmutable($endDate, $tz);
+    $day    = new DateTimeImmutable($startDate, $utc);
+    $last   = new DateTimeImmutable($endDate, $utc);
     for (; $day <= $last; $day = $day->modify('+1 day')) {
         $result[$day->format('Y-m-d')] = 0;
     }
@@ -118,6 +118,91 @@ function daily_frequency(array $entries, string $timezone, string $startDate, st
         if (isset($result[$date])) $result[$date]++;
     }
     return $result;
+}
+
+const URGENCY_COLOR = '#FFD60A';
+
+// One hand-picked color per stool type. Blue = hard, green = ideal (Type 4), red = loose.
+// Types 3 and 5 are pale tints; 1 and 7 are the most vivid. No yellow/orange (reserved for urgency).
+const HEATMAP_TYPE_COLORS = [
+    1 => '#2D9CFF',
+    2 => '#62A6DE',
+    3 => '#8DB0CC',
+    4 => '#00754A',
+    5 => '#D99AAE',
+    6 => '#E0526F',
+    7 => '#E5193F',
+];
+
+function daily_urgent_frequency(array $entries, string $timezone, string $startDate, string $endDate): array
+{
+    $urgent = array_filter($entries, fn($e) => !empty($e['urgency']));
+    return daily_frequency($urgent, $timezone, $startDate, $endDate);
+}
+
+// Weeks (Sunday first) of 7 slots each; null pads days outside the range.
+// A day's type is its largest stool type, so one bad event isn't averaged away.
+function build_heatmap(array $entries, string $timezone, string $startDate, string $endDate): array
+{
+    $byDate = [];
+    foreach ($entries as $entry) {
+        $date = from_utc($entry['occurred_at'], $timezone)->format('Y-m-d');
+        $byDate[$date]['type']   = max($byDate[$date]['type'] ?? 0, (int) $entry['stool_type']);
+        $byDate[$date]['urgent'] = ($byDate[$date]['urgent'] ?? false) || !empty($entry['urgency']);
+    }
+
+    $utc   = new DateTimeZone('UTC');   // calendar-day math in UTC: some zones skip local midnight
+    $day   = new DateTimeImmutable($startDate, $utc);
+    $last  = new DateTimeImmutable($endDate, $utc);
+    $weeks = [];
+    $week  = array_fill(0, (int) $day->format('w'), null);
+    for (; $day <= $last; $day = $day->modify('+1 day')) {
+        $date   = $day->format('Y-m-d');
+        $week[] = [
+            'date'   => $date,
+            'type'   => $byDate[$date]['type'] ?? null,
+            'urgent' => $byDate[$date]['urgent'] ?? false,
+        ];
+        if (count($week) === 7) {
+            $weeks[] = $week;
+            $week    = [];
+        }
+    }
+    if ($week) {
+        $weeks[] = array_pad($week, 7, null);
+    }
+    return $weeks;
+}
+
+// Month labels for the heat map: one over the first column, then one over each column
+// holding a 1st. An earlier label closer than 3 columns to the next one is dropped.
+function heatmap_month_labels(array $weeks): array
+{
+    $candidates = [];
+    foreach ($weeks as $col => $week) {
+        $days = array_values(array_filter($week));
+        if (!$days) continue;
+        $label = null;
+        if ($col === 0) {
+            $label = (new DateTimeImmutable($days[0]['date']))->format('M');
+        }
+        foreach ($days as $day) {
+            if (substr($day['date'], 8, 2) === '01') {
+                $label = (new DateTimeImmutable($day['date']))->format('M');
+            }
+        }
+        if ($label !== null) $candidates[] = ['col' => $col, 'label' => $label];
+    }
+
+    $kept = [];
+    $next = null;
+    foreach (array_reverse($candidates) as $c) {
+        if ($next === null || $next - $c['col'] >= 3) {
+            array_unshift($kept, $c);
+            $next = $c['col'];
+        }
+    }
+    return $kept;
 }
 
 const STATS_RANGE_DAY_OPTIONS = [30, 60, 90, 180, 365];
@@ -161,7 +246,16 @@ function stats_range_from_request(array $query, string $today, ?string $earliest
         $days = (int) ($query['days'] ?? 30);
         return last_n_days_range(in_array($days, STATS_RANGE_DAY_OPTIONS, true) ? $days : 30, $today);
     }
-    return resolve_stats_range($query['start'] ?? null, $query['end'] ?? null, $today);
+    $start = is_string($query['start'] ?? null) ? $query['start'] : null;
+    $end   = is_string($query['end'] ?? null) ? $query['end'] : null;
+    $range = resolve_stats_range($start, $end, $today);
+
+    // An explicit start can't reach back past the data (keeps absurd years from building
+    // millions of day cells). The default range is left alone so new users still get "Last 30".
+    if (parse_ymd($start) !== null) {
+        $range['start'] = min(max($range['start'], $earliest ?? $range['end']), $range['end']);
+    }
+    return $range;
 }
 
 function stats_range_preset(array $range, string $today, ?string $earliest, array $dayOptions): ?string

@@ -218,6 +218,140 @@ class HelpersTest extends TestCase
         $this->assertSame(0, array_sum($freq));
     }
 
+    // --- Urgency on stats ---
+
+    public function testDailyUrgentFrequencyCountsOnlyUrgentEntriesPerLocalDay(): void
+    {
+        $entries = [
+            ['occurred_at' => '2026-05-12T15:00:00Z', 'urgency' => 1],
+            ['occurred_at' => '2026-05-12T16:00:00Z', 'urgency' => 0],
+            ['occurred_at' => '2026-05-12T17:00:00Z', 'urgency' => 1],
+            ['occurred_at' => '2026-05-12T02:00:00Z', 'urgency' => 1], // May 11 in New York
+        ];
+        $freq = daily_urgent_frequency($entries, 'America/New_York', '2026-05-11', '2026-05-13');
+        $this->assertSame(['2026-05-11' => 1, '2026-05-12' => 2, '2026-05-13' => 0], $freq);
+    }
+
+    public function testHeatmapPadsFirstWeekSoDaysLandOnTheirWeekday(): void
+    {
+        // 2026-05-01 is a Friday; weeks start on Sunday.
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-01', '2026-05-04');
+        $this->assertCount(2, $weeks);
+        $this->assertCount(7, $weeks[0]);
+        $this->assertSame([null, null, null, null, null], array_slice($weeks[0], 0, 5));
+        $this->assertSame('2026-05-01', $weeks[0][5]['date']);
+        $this->assertSame('2026-05-02', $weeks[0][6]['date']);
+        $this->assertSame('2026-05-03', $weeks[1][0]['date']);
+        $this->assertSame('2026-05-04', $weeks[1][1]['date']);
+        $this->assertSame([null, null, null, null, null], array_slice($weeks[1], 2));
+    }
+
+    public function testHeatmapDayWithoutEntriesHasNoTypeAndNoUrgency(): void
+    {
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-03', '2026-05-03');
+        $this->assertSame(['date' => '2026-05-03', 'type' => null, 'urgent' => false], $weeks[0][0]);
+    }
+
+    public function testHeatmapColorsDayByLargestTypeNotAverage(): void
+    {
+        $entries = [
+            ['occurred_at' => '2026-05-03T15:00:00Z', 'stool_type' => 1, 'urgency' => 0],
+            ['occurred_at' => '2026-05-03T18:00:00Z', 'stool_type' => 7, 'urgency' => 0],
+            ['occurred_at' => '2026-05-03T20:00:00Z', 'stool_type' => 3, 'urgency' => 0],
+        ];
+        $weeks = build_heatmap($entries, 'America/Chicago', '2026-05-03', '2026-05-03');
+        $this->assertSame(7, $weeks[0][0]['type']);
+    }
+
+    public function testHeatmapDayIsUrgentIfAnyEntryIsUrgent(): void
+    {
+        $entries = [
+            ['occurred_at' => '2026-05-03T15:00:00Z', 'stool_type' => 4, 'urgency' => 0],
+            ['occurred_at' => '2026-05-03T18:00:00Z', 'stool_type' => 4, 'urgency' => 1],
+        ];
+        $weeks = build_heatmap($entries, 'America/Chicago', '2026-05-03', '2026-05-03');
+        $this->assertTrue($weeks[0][0]['urgent']);
+    }
+
+    public function testHeatmapUsesLocalDateForBucketing(): void
+    {
+        // 02:00Z on May 4 is 21:00 on May 3 in Chicago.
+        $entries = [['occurred_at' => '2026-05-04T02:00:00Z', 'stool_type' => 5, 'urgency' => 0]];
+        $weeks = build_heatmap($entries, 'America/Chicago', '2026-05-03', '2026-05-04');
+        $this->assertSame(5, $weeks[0][0]['type']);
+        $this->assertNull($weeks[0][1]['type']);
+    }
+
+    public function testHeatmapMonthLabelsMarkTheColumnContainingTheFirst(): void
+    {
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-03', '2026-06-13');
+        $this->assertSame(
+            [['col' => 0, 'label' => 'May'], ['col' => 4, 'label' => 'Jun']],
+            heatmap_month_labels($weeks)
+        );
+    }
+
+    public function testHeatmapMonthLabelsForSingleMonthIsJustThatMonth(): void
+    {
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-03', '2026-05-30');
+        $this->assertSame([['col' => 0, 'label' => 'May']], heatmap_month_labels($weeks));
+    }
+
+    public function testHeatmapMonthLabelsDropsAnEarlierLabelThatWouldCollide(): void
+    {
+        // Starts Wed May 27; the very next column holds Jun 1, so "May" would overlap "Jun".
+        $weeks = build_heatmap([], 'America/Chicago', '2026-05-27', '2026-06-10');
+        $this->assertSame([['col' => 1, 'label' => 'Jun']], heatmap_month_labels($weeks));
+    }
+
+    public function testHeatmapMonthLabelsEmptyForNoWeeks(): void
+    {
+        $this->assertSame([], heatmap_month_labels([]));
+    }
+
+    public function testHeatmapHasAColorForEveryStoolType(): void
+    {
+        $this->assertSame([1, 2, 3, 4, 5, 6, 7], array_keys(HEATMAP_TYPE_COLORS));
+    }
+
+    public function testUrgencyColorIsFarInHueFromEveryHeatmapColor(): void
+    {
+        $hue = function (string $hex): float {
+            [$r, $g, $b] = array_map(fn($c) => hexdec($c) / 255, str_split(ltrim($hex, '#'), 2));
+            $max = max($r, $g, $b);
+            $d   = $max - min($r, $g, $b);
+            if ($d == 0) return 0.0;
+            $h = match ($max) {
+                $r => fmod(($g - $b) / $d, 6),
+                $g => ($b - $r) / $d + 2,
+                default => ($r - $g) / $d + 4,
+            };
+            return fmod($h * 60 + 360, 360);
+        };
+        $urgentHue = $hue(URGENCY_COLOR);
+        foreach (HEATMAP_TYPE_COLORS as $type => $color) {
+            $diff = abs($urgentHue - $hue($color));
+            $diff = min($diff, 360 - $diff);
+            $this->assertGreaterThanOrEqual(60, $diff, "Type $type ($color) is too close to the urgency color");
+        }
+    }
+
+    public function testHeatmapColorsStayVisibleOnTheDarkCard(): void
+    {
+        $lum = function (string $hex): float {
+            $c = array_map(function ($v) {
+                $v = hexdec($v) / 255;
+                return $v <= 0.03928 ? $v / 12.92 : (($v + 0.055) / 1.055) ** 2.4;
+            }, str_split(ltrim($hex, '#'), 2));
+            return 0.2126 * $c[0] + 0.7152 * $c[1] + 0.0722 * $c[2];
+        };
+        $card = $lum('#2a2a2a');
+        foreach (HEATMAP_TYPE_COLORS as $type => $color) {
+            $ratio = ($lum($color) + 0.05) / ($card + 0.05);
+            $this->assertGreaterThanOrEqual(2.4, $ratio, "Type $type ($color) fades into the card");
+        }
+    }
+
     // --- Stats range ---
 
     public function testResolveStatsRangeDefaultsToLast30DaysInclusiveOfToday(): void
@@ -299,6 +433,53 @@ class HelpersTest extends TestCase
             '2026-05-30', '2025-01-01'
         );
         $this->assertSame(['start' => '2025-01-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestIgnoresArrayValuesInsteadOfCrashing(): void
+    {
+        $r = stats_range_from_request(['start' => ['x'], 'end' => ['y']], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestClampsExplicitStartToEarliestEntry(): void
+    {
+        $r = stats_range_from_request(['start' => '0001-01-01'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2025-01-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestWithNoDataCollapsesExplicitStartToEnd(): void
+    {
+        $r = stats_range_from_request(['start' => '1900-01-01'], '2026-05-30', null);
+        $this->assertSame(['start' => '2026-05-30', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestRangeEntirelyBeforeEarliestCollapsesToEnd(): void
+    {
+        $r = stats_range_from_request(['start' => '2020-01-01', 'end' => '2020-02-01'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2020-02-01', 'end' => '2020-02-01'], $r);
+    }
+
+    public function testStatsRangeFromRequestDefaultIsNotClampedToEarliest(): void
+    {
+        // A brand-new user (3 days of data) still gets "Last 30 days", not "All Time".
+        $r = stats_range_from_request([], '2026-05-30', '2026-05-28');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testDailyFrequencyKeepsLastDayWhenMidnightDoesNotExist(): void
+    {
+        // Havana springs forward at 00:00 on 2026-03-08, so that midnight is skipped.
+        $freq = daily_frequency([], 'America/Havana', '2026-03-05', '2026-03-12');
+        $this->assertSame(8, count($freq));
+        $this->assertSame('2026-03-12', array_key_last($freq));
+    }
+
+    public function testHeatmapKeepsLastDayWhenMidnightDoesNotExist(): void
+    {
+        $weeks = build_heatmap([], 'America/Havana', '2026-03-05', '2026-03-12');
+        $dates = array_column(array_filter(array_merge(...$weeks)), 'date');
+        $this->assertSame(8, count($dates));
+        $this->assertSame('2026-03-12', end($dates));
     }
 
     public function testLastNDaysRangeEndsToday(): void
