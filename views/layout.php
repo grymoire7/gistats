@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GI Stats</title>
+    <link rel="icon" href="<?= htmlspecialchars($config['base_url']) ?>/icons/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($config['base_url']) ?>/icons/apple-touch-icon.png">
+    <link rel="manifest" href="<?= htmlspecialchars($config['base_url']) ?>/manifest.webmanifest">
     <link rel="stylesheet" href="<?= htmlspecialchars($config['base_url']) ?>/css/compiled.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

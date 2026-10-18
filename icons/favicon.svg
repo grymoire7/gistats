@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#FFF1D6"/>
+  <!-- bottom tier -->
+  <rect x="66" y="306" width="380" height="130" rx="65" fill="#4A2A14"/>
+  <rect x="66" y="298" width="380" height="130" rx="65" fill="#6B3E1F"/>
+  <!-- middle tier -->
+  <rect x="118" y="200" width="276" height="156" rx="61" fill="#4A2A14"/>
+  <rect x="118" y="192" width="276" height="156" rx="61" fill="#6B3E1F"/>
+  <g transform="translate(0 -26)">
+  <path d="M168 238C168 196 206 170 234 142C248 128 256 110 252 86C306 102 344 176 344 238Q344 266 304 266H208Q168 266 168 238Z" fill="#4A2A14"/>
+  <path d="M168 230C168 188 206 162 234 134C248 120 256 102 252 78C306 94 344 168 344 230Q344 258 304 258H208Q168 258 168 230Z" fill="#6B3E1F"/>
+</g>
+  <!-- highlights -->
+  <path d="M204 180c10-18 28-32 44-46M100 346c4-14 14-24 28-30" stroke="#8A5530" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <!-- eyes (middle tier) -->
+  <ellipse cx="212" cy="272" rx="26" ry="32" fill="#fff"/>
+  <ellipse cx="300" cy="272" rx="26" ry="32" fill="#fff"/>
+  <circle cx="212" cy="280" r="14" fill="#2B1A10"/>
+  <circle cx="300" cy="280" r="14" fill="#2B1A10"/>
+  <!-- smile (bottom tier) -->
+  <path d="M214 376q42 34 84 0" stroke="#FFF1D6" stroke-width="13" stroke-linecap="round" fill="none"/>
+</svg>
