@@ -104,17 +104,71 @@ function type_frequency(array $entries): array
     return $freq;
 }
 
-function daily_frequency(array $entries, string $timezone, int $days = 30): array
+function daily_frequency(array $entries, string $timezone, string $startDate, string $endDate): array
 {
     $tz     = new DateTimeZone($timezone);
     $result = [];
-    for ($i = $days - 1; $i >= 0; $i--) {
-        $date = (new DateTime("$i days ago", $tz))->format('Y-m-d');
-        $result[$date] = 0;
+    $day    = new DateTimeImmutable($startDate, $tz);
+    $last   = new DateTimeImmutable($endDate, $tz);
+    for (; $day <= $last; $day = $day->modify('+1 day')) {
+        $result[$day->format('Y-m-d')] = 0;
     }
     foreach ($entries as $entry) {
         $date = from_utc($entry['occurred_at'], $timezone)->format('Y-m-d');
         if (isset($result[$date])) $result[$date]++;
     }
     return $result;
+}
+
+const STATS_RANGE_DAY_OPTIONS = [30, 60, 90, 180, 365];
+
+function parse_ymd(?string $value): ?string
+{
+    if ($value === null) return null;
+    $dt = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+    return $dt && $dt->format('Y-m-d') === $value ? $value : null;
+}
+
+function last_n_days_range(int $days, string $today): array
+{
+    $start = (new DateTimeImmutable($today))->modify('-' . ($days - 1) . ' days')->format('Y-m-d');
+    return ['start' => $start, 'end' => $today];
+}
+
+function resolve_stats_range(?string $start, ?string $end, string $today, int $defaultDays = 30): array
+{
+    $start = parse_ymd($start);
+    $end   = parse_ymd($end);
+    if ($end === null || $end > $today) {
+        $end = $today;
+    }
+    if ($start === null) {
+        $start = last_n_days_range($defaultDays, $end)['start'];
+    }
+    if ($start > $end) {
+        $start = $end;
+    }
+    return ['start' => $start, 'end' => $end];
+}
+
+function stats_range_from_request(array $query, string $today, ?string $earliest): array
+{
+    $preset = $query['preset'] ?? null;
+    if ($preset === 'all') {
+        return ['start' => $earliest ?? $today, 'end' => $today];
+    }
+    if ($preset === 'last') {
+        $days = (int) ($query['days'] ?? 30);
+        return last_n_days_range(in_array($days, STATS_RANGE_DAY_OPTIONS, true) ? $days : 30, $today);
+    }
+    return resolve_stats_range($query['start'] ?? null, $query['end'] ?? null, $today);
+}
+
+function stats_range_preset(array $range, string $today, ?string $earliest, array $dayOptions): ?string
+{
+    foreach ($dayOptions as $n) {
+        if ($range === last_n_days_range($n, $today)) return "last:$n";
+    }
+    if ($earliest !== null && $range === ['start' => $earliest, 'end' => $today]) return 'all';
+    return null;
 }

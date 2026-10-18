@@ -193,23 +193,138 @@ class HelpersTest extends TestCase
 
     // --- Daily frequency ---
 
-    public function testDailyFrequencyReturns30Days(): void
+    public function testDailyFrequencyHasOneKeyPerDayInclusive(): void
     {
-        $freq = daily_frequency([], 'America/New_York', 30);
-        $this->assertCount(30, $freq);
+        $freq = daily_frequency([], 'America/New_York', '2026-05-10', '2026-05-12');
+        $this->assertSame(['2026-05-10', '2026-05-11', '2026-05-12'], array_keys($freq));
     }
 
-    public function testDailyFrequencyCountsEntries(): void
+    public function testDailyFrequencyCountsEntriesByLocalDate(): void
     {
-        $tz = 'America/New_York';
-        $todayUtc = (new DateTime('now', new DateTimeZone($tz)))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+        // 2026-05-12T02:00Z is still May 11 in New York.
         $entries = [
-            ['occurred_at' => $todayUtc],
-            ['occurred_at' => $todayUtc],
+            ['occurred_at' => '2026-05-12T02:00:00Z'],
+            ['occurred_at' => '2026-05-12T15:00:00Z'],
+            ['occurred_at' => '2026-05-12T16:00:00Z'],
         ];
-        $freq = daily_frequency($entries, $tz, 30);
-        $today = (new DateTime('now', new DateTimeZone($tz)))->format('Y-m-d');
-        $this->assertEquals(2, $freq[$today]);
+        $freq = daily_frequency($entries, 'America/New_York', '2026-05-11', '2026-05-12');
+        $this->assertSame(['2026-05-11' => 1, '2026-05-12' => 2], $freq);
+    }
+
+    public function testDailyFrequencyIgnoresEntriesOutsideRange(): void
+    {
+        $entries = [['occurred_at' => '2026-05-20T15:00:00Z']];
+        $freq = daily_frequency($entries, 'America/New_York', '2026-05-11', '2026-05-12');
+        $this->assertSame(0, array_sum($freq));
+    }
+
+    // --- Stats range ---
+
+    public function testResolveStatsRangeDefaultsToLast30DaysInclusiveOfToday(): void
+    {
+        $r = resolve_stats_range(null, null, '2026-05-30');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testResolveStatsRangeUsesValidInput(): void
+    {
+        $r = resolve_stats_range('2026-01-05', '2026-02-10', '2026-05-30');
+        $this->assertSame(['start' => '2026-01-05', 'end' => '2026-02-10'], $r);
+    }
+
+    public function testResolveStatsRangeFallsBackToDefaultOnGarbage(): void
+    {
+        $r = resolve_stats_range('nope', '2026-13-45', '2026-05-30');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testResolveStatsRangeClampsFutureEndToToday(): void
+    {
+        $r = resolve_stats_range('2026-05-01', '2026-12-31', '2026-05-30');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testResolveStatsRangeMovesStartToEndWhenStartAfterEnd(): void
+    {
+        $r = resolve_stats_range('2026-05-20', '2026-05-10', '2026-05-30');
+        $this->assertSame(['start' => '2026-05-10', 'end' => '2026-05-10'], $r);
+    }
+
+    public function testResolveStatsRangeWithOnlyEndKeepsDefaultSpanLength(): void
+    {
+        $r = resolve_stats_range(null, '2026-03-31', '2026-05-30');
+        $this->assertSame(['start' => '2026-03-02', 'end' => '2026-03-31'], $r);
+    }
+
+    public function testStatsRangeFromRequestDefaultsToLast30Days(): void
+    {
+        $r = stats_range_from_request([], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestLastPresetUsesDays(): void
+    {
+        $r = stats_range_from_request(['preset' => 'last', 'days' => '90'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2026-03-02', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestLastPresetRejectsUnlistedDays(): void
+    {
+        $r = stats_range_from_request(['preset' => 'last', 'days' => '45'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2026-05-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestAllPresetSpansEarliestToToday(): void
+    {
+        $r = stats_range_from_request(['preset' => 'all'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2025-01-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestAllPresetWithNoDataIsJustToday(): void
+    {
+        $r = stats_range_from_request(['preset' => 'all'], '2026-05-30', null);
+        $this->assertSame(['start' => '2026-05-30', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testStatsRangeFromRequestUsesManualDatesWithoutPreset(): void
+    {
+        $r = stats_range_from_request(['start' => '2026-01-05', 'end' => '2026-02-10'], '2026-05-30', '2025-01-01');
+        $this->assertSame(['start' => '2026-01-05', 'end' => '2026-02-10'], $r);
+    }
+
+    public function testStatsRangeFromRequestPresetWinsOverDates(): void
+    {
+        $r = stats_range_from_request(
+            ['preset' => 'all', 'start' => '2026-01-05', 'end' => '2026-02-10'],
+            '2026-05-30', '2025-01-01'
+        );
+        $this->assertSame(['start' => '2025-01-01', 'end' => '2026-05-30'], $r);
+    }
+
+    public function testLastNDaysRangeEndsToday(): void
+    {
+        $this->assertSame(
+            ['start' => '2026-03-02', 'end' => '2026-05-30'],
+            last_n_days_range(90, '2026-05-30')
+        );
+    }
+
+    public function testStatsPresetDetectsLastNDays(): void
+    {
+        $range = last_n_days_range(90, '2026-05-30');
+        $this->assertSame('last:90', stats_range_preset($range, '2026-05-30', '2025-01-01', [30, 60, 90]));
+    }
+
+    public function testStatsPresetDetectsAllTime(): void
+    {
+        $range = ['start' => '2025-01-01', 'end' => '2026-05-30'];
+        $this->assertSame('all', stats_range_preset($range, '2026-05-30', '2025-01-01', [30, 60, 90]));
+    }
+
+    public function testStatsPresetIsNullForCustomRange(): void
+    {
+        $range = ['start' => '2026-04-01', 'end' => '2026-05-10'];
+        $this->assertNull(stats_range_preset($range, '2026-05-30', '2025-01-01', [30, 60, 90]));
     }
 
     // --- Base path stripping ---
