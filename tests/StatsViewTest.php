@@ -15,6 +15,12 @@ class StatsViewTest extends TestCase
             'movingAvg' => [4.0, 3.5],
             'typeFreq'  => [1 => 0, 2 => 0, 3 => 1, 4 => 1, 5 => 0, 6 => 0, 7 => 0],
             'dailyFreq' => ['2026-05-29' => 1, '2026-05-30' => 1],
+            'dailyUrgent' => ['2026-05-29' => 0, '2026-05-30' => 1],
+            'urgencies' => [0, 1],
+            'heatmap'   => build_heatmap([
+                ['occurred_at' => '2026-05-29T15:00:00Z', 'stool_type' => 3, 'urgency' => 0],
+                ['occurred_at' => '2026-05-30T15:00:00Z', 'stool_type' => 6, 'urgency' => 1],
+            ], 'America/Chicago', '2026-05-29', '2026-05-30'),
             'range'     => ['start' => '2026-05-01', 'end' => '2026-05-30'],
             'today'     => '2026-05-30',
             'earliest'  => '2025-01-01',
@@ -101,5 +107,79 @@ class StatsViewTest extends TestCase
         $html = $this->render(['types' => [], 'movingAvg' => [], 'earliest' => null]);
         $this->assertStringContainsString('No entries yet', $html);
         $this->assertStringNotContainsString('name="start"', $html);
+    }
+
+    // --- Urgency: charts ---
+
+    public function testMovingAverageChartMarksUrgentPointsInUrgencyColor(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString('const urgentFlags = [0,1];', $html);
+        $this->assertStringContainsString("'" . URGENCY_COLOR . "'", $html);
+        $this->assertStringContainsString('pointBackgroundColor: urgentFlags.map', $html);
+    }
+
+    public function testDailyChartIsStackedWithUrgentSegment(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString("label: 'Not urgent'", $html);
+        $this->assertStringContainsString("label: 'Urgent'", $html);
+        $this->assertStringContainsString('const dailyNotUrgent = [1,0];', $html);
+        $this->assertStringContainsString('const dailyUrgent = [0,1];', $html);
+        $this->assertSame(2, substr_count($html, 'stacked: true'));
+    }
+
+    // --- Urgency: heat map ---
+
+    public function testHeatmapCardIsRenderedWithOneCellPerDay(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString('Daily Heat Map', $html);
+        $this->assertSame(2, substr_count($html, 'class="heatmap-cell"'));
+    }
+
+    public function testHeatmapCellUsesTheColorForItsLargestType(): void
+    {
+        $html = $this->render();
+        $this->assertMatchesRegularExpression(
+            '/data-date="2026-05-30"[^>]*data-type="6"[^>]*background:' . preg_quote(HEATMAP_TYPE_COLORS[6], '/') . '/',
+            $html
+        );
+    }
+
+    public function testUrgentDayHasDotAndAccessibleLabel(): void
+    {
+        $html = $this->render();
+        $this->assertSame(1, substr_count($html, 'class="heatmap-dot"'));
+        $this->assertStringContainsString('aria-label="2026-05-30: Type 6, urgent"', $html);
+        $this->assertStringContainsString('aria-label="2026-05-29: Type 3"', $html);
+    }
+
+    public function testDayWithoutEntriesIsLabeledAndHasNoTypeColor(): void
+    {
+        $html = $this->render([
+            'heatmap' => build_heatmap([], 'America/Chicago', '2026-05-30', '2026-05-30'),
+        ]);
+        $this->assertStringContainsString('aria-label="2026-05-30: no entries"', $html);
+        $this->assertStringNotContainsString('data-type=', $html);
+    }
+
+    public function testHeatmapScrollsSidewaysAndShowsLegend(): void
+    {
+        $html = $this->render();
+        $this->assertStringContainsString('overflow-x:auto', $html);
+        foreach (HEATMAP_TYPE_COLORS as $color) {
+            $this->assertStringContainsString('class="heatmap-swatch" style="background:' . $color, $html);
+        }
+        $this->assertStringContainsString('Urgent', $html);
+    }
+
+    public function testWeekdayRowsArePlacedSundayFirst(): void
+    {
+        // 2026-05-30 is a Saturday, so the grid's single column has 6 blanks before it.
+        $html = $this->render([
+            'heatmap' => build_heatmap([], 'America/Chicago', '2026-05-30', '2026-05-30'),
+        ]);
+        $this->assertSame(6, substr_count($html, 'class="heatmap-blank"'));
     }
 }

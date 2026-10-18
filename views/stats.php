@@ -43,7 +43,12 @@ $jsonLabels     = json_encode(range(1, count($types)));
 $jsonFreqLabels = json_encode(array_map(fn($t) => 'Type ' . $t, array_keys($typeFreq)));
 $jsonFreqData   = json_encode(array_values($typeFreq));
 $jsonDailyLabels = json_encode(array_keys($dailyFreq));
-$jsonDailyData   = json_encode(array_values($dailyFreq));
+$jsonUrgent      = json_encode(array_map('intval', array_values($urgencies)));
+$jsonDailyUrgent = json_encode(array_values($dailyUrgent));
+$jsonDailyNormal = json_encode(array_values(array_map(
+    fn($date) => $dailyFreq[$date] - $dailyUrgent[$date],
+    array_keys($dailyFreq)
+)));
 ?>
 
 <div class="card" style="margin-bottom:20px;">
@@ -62,6 +67,43 @@ $jsonDailyData   = json_encode(array_values($dailyFreq));
     <canvas id="chart-daily" height="200"></canvas>
 </div>
 
+<style>
+    .heatmap-grid { display:grid; grid-auto-flow:column; grid-template-rows:repeat(7, 14px); grid-auto-columns:14px; gap:3px; width:max-content; }
+    .heatmap-cell { position:relative; width:14px; height:14px; border-radius:3px; }
+    .heatmap-blank { width:14px; height:14px; }
+    .heatmap-dot { position:absolute; top:50%; left:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%;
+                   background:<?= URGENCY_COLOR ?>; box-shadow:0 0 0 1px rgba(0,0,0,0.6); }
+    .heatmap-swatch { display:inline-block; width:14px; height:14px; border-radius:3px; }
+    .heatmap-key-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:<?= URGENCY_COLOR ?>; }
+</style>
+<div class="card" style="margin-bottom:20px;">
+    <h3 style="font-size:14px;font-weight:600;margin:0 0 4px;">Daily Heat Map</h3>
+    <p style="font-size:11px;color:var(--color-muted);margin:0 0 12px;">Each day is colored by its largest stool type</p>
+    <div style="overflow-x:auto;padding-bottom:8px;">
+        <div class="heatmap-grid">
+            <?php foreach ($heatmap as $week): foreach ($week as $day): ?>
+                <?php if ($day === null): ?>
+            <div class="heatmap-blank"></div>
+                <?php else:
+                    $label = $day['date'] . ': ' . ($day['type'] === null ? 'no entries' : 'Type ' . $day['type'] . ($day['urgent'] ? ', urgent' : ''));
+                    $bg    = $day['type'] === null ? 'var(--color-border)' : HEATMAP_TYPE_COLORS[$day['type']];
+                ?>
+            <div class="heatmap-cell" data-date="<?= htmlspecialchars($day['date']) ?>"<?= $day['type'] !== null ? ' data-type="' . $day['type'] . '"' : '' ?> role="img"
+                 aria-label="<?= htmlspecialchars($label) ?>" title="<?= htmlspecialchars($label) ?>" style="background:<?= $bg ?>;"><?php if ($day['urgent']): ?><span class="heatmap-dot"></span><?php endif; ?></div>
+                <?php endif; ?>
+            <?php endforeach; endforeach; ?>
+        </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--color-muted);">
+        <span>Hard</span>
+        <?php foreach (HEATMAP_TYPE_COLORS as $type => $color): ?>
+        <span class="heatmap-swatch" style="background:<?= $color ?>;" title="Type <?= $type ?>"></span>
+        <?php endforeach; ?>
+        <span>Loose</span>
+        <span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;"><span class="heatmap-key-dot"></span> Urgent</span>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const green  = '#00754A';
@@ -71,6 +113,11 @@ const grid   = 'rgba(255,255,255,0.08)';
 
 Chart.defaults.color = text;
 Chart.defaults.borderColor = grid;
+
+const urgentColor = '<?= URGENCY_COLOR ?>';
+const urgentFlags = <?= $jsonUrgent ?>;
+const dailyNotUrgent = <?= $jsonDailyNormal ?>;
+const dailyUrgent = <?= $jsonDailyUrgent ?>;
 
 // Moving average
 new Chart(document.getElementById('chart-avg'), {
@@ -84,6 +131,8 @@ new Chart(document.getElementById('chart-avg'), {
             backgroundColor: 'rgba(0,117,74,0.1)',
             borderWidth: 2,
             pointRadius: 2,
+            pointBackgroundColor: urgentFlags.map(u => u ? urgentColor : green),
+            pointBorderColor: urgentFlags.map(u => u ? urgentColor : green),
             tension: 0.4,
             fill: true,
         }]
@@ -115,22 +164,21 @@ new Chart(document.getElementById('chart-freq'), {
     }
 });
 
-// Daily frequency
+// Daily frequency (stacked: urgent entries in yellow)
 new Chart(document.getElementById('chart-daily'), {
     type: 'bar',
     data: {
         labels: <?= $jsonDailyLabels ?>,
-        datasets: [{
-            label: 'Entries',
-            data: <?= $jsonDailyData ?>,
-            backgroundColor: green,
-        }]
+        datasets: [
+            { label: 'Not urgent', data: dailyNotUrgent, backgroundColor: green },
+            { label: 'Urgent', data: dailyUrgent, backgroundColor: urgentColor },
+        ]
     },
     options: {
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12 } } },
         scales: {
-            y: { ticks: { stepSize: 1 } },
-            x: { ticks: { maxTicksLimit: 10 } }
+            y: { stacked: true, ticks: { stepSize: 1 } },
+            x: { stacked: true, ticks: { maxTicksLimit: 10 } }
         }
     }
 });

@@ -120,6 +120,60 @@ function daily_frequency(array $entries, string $timezone, string $startDate, st
     return $result;
 }
 
+const URGENCY_COLOR = '#FFD60A';
+
+// One hand-picked color per stool type. Blue = hard, green = ideal (Type 4), red = loose.
+// Types 3 and 5 are pale tints; 1 and 7 are the most vivid. No yellow/orange (reserved for urgency).
+const HEATMAP_TYPE_COLORS = [
+    1 => '#2D9CFF',
+    2 => '#62A6DE',
+    3 => '#8DB0CC',
+    4 => '#00754A',
+    5 => '#D99AAE',
+    6 => '#E0526F',
+    7 => '#E5193F',
+];
+
+function daily_urgent_frequency(array $entries, string $timezone, string $startDate, string $endDate): array
+{
+    $urgent = array_filter($entries, fn($e) => !empty($e['urgency']));
+    return daily_frequency($urgent, $timezone, $startDate, $endDate);
+}
+
+// Weeks (Sunday first) of 7 slots each; null pads days outside the range.
+// A day's type is its largest stool type, so one bad event isn't averaged away.
+function build_heatmap(array $entries, string $timezone, string $startDate, string $endDate): array
+{
+    $byDate = [];
+    foreach ($entries as $entry) {
+        $date = from_utc($entry['occurred_at'], $timezone)->format('Y-m-d');
+        $byDate[$date]['type']   = max($byDate[$date]['type'] ?? 0, (int) $entry['stool_type']);
+        $byDate[$date]['urgent'] = ($byDate[$date]['urgent'] ?? false) || !empty($entry['urgency']);
+    }
+
+    $tz    = new DateTimeZone($timezone);
+    $day   = new DateTimeImmutable($startDate, $tz);
+    $last  = new DateTimeImmutable($endDate, $tz);
+    $weeks = [];
+    $week  = array_fill(0, (int) $day->format('w'), null);
+    for (; $day <= $last; $day = $day->modify('+1 day')) {
+        $date   = $day->format('Y-m-d');
+        $week[] = [
+            'date'   => $date,
+            'type'   => $byDate[$date]['type'] ?? null,
+            'urgent' => $byDate[$date]['urgent'] ?? false,
+        ];
+        if (count($week) === 7) {
+            $weeks[] = $week;
+            $week    = [];
+        }
+    }
+    if ($week) {
+        $weeks[] = array_pad($week, 7, null);
+    }
+    return $weeks;
+}
+
 const STATS_RANGE_DAY_OPTIONS = [30, 60, 90, 180, 365];
 
 function parse_ymd(?string $value): ?string

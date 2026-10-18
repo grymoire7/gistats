@@ -233,8 +233,14 @@ $router->get('/stats', function () use ($config) {
     $types    = array_column($entries, 'stool_type');
     $movingAvg = moving_average(array_map('intval', $types), 7);
     $typeFreq  = type_frequency($entries);
-    $dailyFreq = daily_frequency($entries, $tz, $range['start'], $range['end']);
-    render('stats', compact('movingAvg', 'types', 'typeFreq', 'dailyFreq', 'range', 'today', 'earliest', 'preset'));
+    $dailyFreq   = daily_frequency($entries, $tz, $range['start'], $range['end']);
+    $dailyUrgent = daily_urgent_frequency($entries, $tz, $range['start'], $range['end']);
+    $urgencies   = array_column($entries, 'urgency');
+    $heatmap     = build_heatmap($entries, $tz, $range['start'], $range['end']);
+    render('stats', compact(
+        'movingAvg', 'types', 'typeFreq', 'dailyFreq', 'dailyUrgent', 'urgencies', 'heatmap',
+        'range', 'today', 'earliest', 'preset'
+    ));
 });
 
 // Blank new-entry form (used by Cancel in edit mode)
