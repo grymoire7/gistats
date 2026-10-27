@@ -32,6 +32,10 @@ body {
 }
 .btn-primary:active { transform: scale(0.95); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+/* htmx adds .htmx-request to the form while its request is in flight */
+.label-busy { display: none; }
+.htmx-request .label-idle { display: none; }
+.htmx-request .label-busy { display: inline; }
 
 .btn-outline {
     background: transparent;

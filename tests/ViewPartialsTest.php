@@ -29,6 +29,33 @@ class ViewPartialsTest extends TestCase
         return ob_get_clean();
     }
 
+    // --- Save feedback ---
+
+    public function testNewEntryFormDisablesSaveButtonWhileRequestInFlight(): void
+    {
+        $html = $this->renderEntryForm(null);
+        $this->assertStringContainsString('hx-disabled-elt="find button[type=submit]"', $html);
+    }
+
+    public function testEditFormDisablesSaveButtonWhileRequestInFlight(): void
+    {
+        $html = $this->renderEntryForm([
+            'id'               => 1,
+            'occurred_at'      => '2026-05-12T19:30:00Z',
+            'stool_type'       => 3,
+            'duration_seconds' => null,
+            'note'             => '',
+            'is_edit'          => true,
+        ]);
+        $this->assertStringContainsString('hx-disabled-elt="find button[type=submit]"', $html);
+    }
+
+    public function testSaveButtonHasSavingLabel(): void
+    {
+        $html = $this->renderEntryForm(null);
+        $this->assertStringContainsString('class="label-busy">Saving…</span>', $html);
+    }
+
     // --- Stool type preselection ---
 
     public function testNewEntryFormDefaultsToType4(): void
