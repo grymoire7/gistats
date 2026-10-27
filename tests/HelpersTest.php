@@ -7,6 +7,39 @@ require_once __DIR__ . '/../lib/helpers.php';
 
 class HelpersTest extends TestCase
 {
+    // --- Asset URLs ---
+
+    private function makeAssetRoot(string $relativePath, int $mtime): string
+    {
+        $root = sys_get_temp_dir() . '/gistats_assets_' . uniqid();
+        mkdir($root . '/' . dirname($relativePath), 0777, true);
+        file_put_contents($root . '/' . $relativePath, '/* css */');
+        touch($root . '/' . $relativePath, $mtime);
+        return $root;
+    }
+
+    public function testAssetUrlAppendsFileMtimeAsVersion(): void
+    {
+        $root = $this->makeAssetRoot('css/compiled.css', 1700000000);
+        $this->assertSame(
+            '/gistats/css/compiled.css?v=1700000000',
+            asset_url('/gistats', 'css/compiled.css', $root)
+        );
+    }
+
+    public function testAssetUrlWorksWithEmptyBaseUrl(): void
+    {
+        $root = $this->makeAssetRoot('css/compiled.css', 1700000000);
+        $this->assertSame('/css/compiled.css?v=1700000000', asset_url('', 'css/compiled.css', $root));
+    }
+
+    public function testAssetUrlOmitsVersionWhenFileIsMissing(): void
+    {
+        // The CI test job never builds css/compiled.css.
+        $root = sys_get_temp_dir() . '/gistats_assets_missing_' . uniqid();
+        $this->assertSame('/gistats/css/compiled.css', asset_url('/gistats', 'css/compiled.css', $root));
+    }
+
     // --- UTC conversion ---
 
     public function testToUtcConvertsLocalToUtc(): void

@@ -5,6 +5,7 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../lib/auth.php';
 require_once __DIR__ . '/../lib/csrf.php';
+require_once __DIR__ . '/../lib/helpers.php';
 
 class LayoutTest extends TestCase
 {
@@ -34,6 +35,24 @@ class LayoutTest extends TestCase
     {
         $html = $this->renderLayout(['base_url' => '']);
         $this->assertStringContainsString('href="/" style="color:var(--color-text);text-decoration:none;font-size:18px', $html);
+    }
+
+    public function testStylesheetUrlIsVersionedSoDeploysBustTheBrowserCache(): void
+    {
+        // compiled.css is gitignored; make sure one exists for the duration of this test.
+        $css = __DIR__ . '/../css/compiled.css';
+        $created = !file_exists($css);
+        if ($created) {
+            file_put_contents($css, '/* test */');
+        }
+        try {
+            $html = $this->renderLayout(['base_url' => '/gistats']);
+        } finally {
+            if ($created) {
+                unlink($css);
+            }
+        }
+        $this->assertMatchesRegularExpression('#<link rel="stylesheet" href="/gistats/css/compiled\.css\?v=\d+">#', $html);
     }
 
     private function render404(array $config): string

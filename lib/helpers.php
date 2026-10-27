@@ -9,6 +9,17 @@ function strip_base_path(string $uri, string $basePath): string
     return $stripped === '' ? '/' : $stripped;
 }
 
+// URL for a local static asset, versioned by file mtime so a changed file gets a new
+// URL. The host serves static files with a 30-day max-age, so without this a phone
+// keeps the previous deploy's CSS. The version is omitted when the file is missing.
+function asset_url(string $baseUrl, string $path, ?string $root = null): string
+{
+    $root = $root ?? dirname(__DIR__);
+    $url = $baseUrl . '/' . $path;
+    $mtime = @filemtime($root . '/' . $path);
+    return $mtime === false ? $url : $url . '?v=' . $mtime;
+}
+
 function to_utc(string $localDatetime, string $timezone): string
 {
     $dt = new DateTime($localDatetime, new DateTimeZone($timezone));
