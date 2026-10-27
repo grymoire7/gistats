@@ -43,3 +43,7 @@ css/compiled.css
 
 # Rodney
 .rodney/
+
+# Playwright
+/test-results/
+/playwright-report/

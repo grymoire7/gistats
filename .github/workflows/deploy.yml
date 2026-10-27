@@ -60,6 +60,7 @@ jobs:
             --exclude css/input.css \
             --exclude '*.md' \
             --exclude phpunit.xml \
+            --exclude playwright.config.js \
             --exclude composer.json \
             --exclude composer.lock \
             --exclude 'package*.json' \
