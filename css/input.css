@@ -33,10 +33,17 @@ body {
 }
 .btn-primary:active { transform: scale(0.95); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-/* htmx adds .htmx-request to the form while its request is in flight */
-.label-busy { display: none; }
-.htmx-request .label-idle { display: none; }
-.htmx-request .label-busy { display: inline; }
+/* htmx adds .htmx-request to the form while its request is in flight. Both labels share one
+   grid cell and swap by visibility, so the button keeps the width of the longer label and the
+   buttons beside it never move. */
+.btn-primary:has(> .label-busy) {
+    display: inline-grid;
+    justify-items: center;
+}
+.label-idle, .label-busy { grid-area: 1 / 1; }
+.label-busy { visibility: hidden; }
+.htmx-request .label-idle { visibility: hidden; }
+.htmx-request .label-busy { visibility: visible; }
 
 .btn-outline {
     background: transparent;
@@ -76,6 +83,26 @@ body {
 .btn-urgency.active {
     background: var(--color-orange);
     border-color: var(--color-orange);
+}
+
+/* Entry form action row: Save, Reset, timer and Urgency. Wraps rather than overflowing,
+   and tightens up on phones so all four fit on one row from 360px. */
+.entry-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+.entry-actions-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+@media (max-width: 430px) {
+    .entry-actions,
+    .entry-actions-group { gap: 6px; }
+    .entry-actions button { padding: 8px 10px; font-size: 13px; }
 }
 
 .card {

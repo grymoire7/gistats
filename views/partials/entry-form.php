@@ -78,8 +78,8 @@ $errors = $errors ?? [];
                       style="resize:vertical;"><?= htmlspecialchars($noteVal) ?></textarea>
         </div>
 
-        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;">
-            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <div class="entry-actions">
+            <div class="entry-actions-group">
                 <button type="submit" class="btn-primary">
                     <span class="label-idle">Save</span><span class="label-busy">Saving…</span>
                 </button>
