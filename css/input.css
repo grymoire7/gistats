@@ -86,7 +86,7 @@ body {
 }
 
 /* Entry form action row: Save, Reset, timer and Urgency. Wraps rather than overflowing,
-   and tightens up on phones so all four fit on one row from 360px. */
+   and tightens up on phones so all four fit on one row from about 390px (a Pixel 8a is 412px). */
 .entry-actions {
     display: flex;
     flex-wrap: wrap;
@@ -101,8 +101,8 @@ body {
 }
 @media (max-width: 430px) {
     .entry-actions,
-    .entry-actions-group { gap: 6px; }
-    .entry-actions button { padding: 8px 10px; font-size: 13px; }
+    .entry-actions-group { gap: 8px; }
+    .entry-actions button { padding: 8px 12px; }
 }
 
 .card {

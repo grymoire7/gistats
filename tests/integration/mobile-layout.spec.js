@@ -35,8 +35,9 @@ test('the Urgency label stays on one line on a narrow phone', async ({ page }) =
   expect(lines).toBe(1);
 });
 
-// Common phone widths from 360 up: Save, Reset, timer and Urgency share one row.
-for (const width of [360, 375, 390, 412]) {
+// Pixel 8a (412px) and iPhone-sized (390px) phones: Save, Reset, timer and Urgency share one row.
+// Narrower phones wrap instead (see the first spec); nothing may overflow the card.
+for (const width of [390, 412]) {
   test(`entry form action buttons share one row at ${width}px wide`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/');
@@ -80,3 +81,12 @@ for (const width of [360, 375]) {
     expect(await positions()).toEqual(idle);
   });
 }
+
+test('buttons keep their normal 14px text on a 412px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 800 });
+  await page.goto('/');
+
+  for (const sel of ['#entry-form button[type=submit]', '#timer-btn', '#urgency-btn']) {
+    await expect(page.locator(sel)).toHaveCSS('font-size', '14px');
+  }
+});
