@@ -41,9 +41,6 @@ config.local.php
 # Compiled CSS
 css/compiled.css
 
-# Rodney
-.rodney/
-
 # Playwright
 /test-results/
 /playwright-report/
