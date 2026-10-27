@@ -132,9 +132,19 @@ Other tasks, defined in `mise.toml`:
 - `mise run build`: minify the compiled Tailwind CSS.
 - `mise run test`: run the PHPUnit suite.
 - `mise run lint`: PHP syntax check across all tracked PHP files.
-- `mise run integration-test`: spin up an isolated PHP server and run browser-automated integration tests.
+- `mise run integration-test`: run the browser integration tests against an isolated PHP server.
 
-Integration tests live in `tests/integration/` and use the `rodney` browser automation tool. The task spins up an isolated PHP server backed by a temporary database, runs every `test-*.sh` script, then tears everything down. Your development database is never touched.
+### Integration tests
+
+The browser tests live in `tests/integration/` and use [Playwright](https://playwright.dev). Each run starts a PHP server on port 8765 with a throwaway database in `tmp/`, so your development database is never touched. Playwright logs in once, then runs every `*.spec.js` file in a fresh browser context.
+
+Before the first run, download the browser:
+
+```sh
+npx playwright install chromium
+```
+
+Then `mise run integration-test` runs the whole suite. To debug a failing spec, use `npx playwright test --ui` to step through it, or open the trace from the last run with `npx playwright show-report`.
 
 ---
 
