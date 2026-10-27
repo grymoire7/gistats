@@ -6,6 +6,9 @@ test('submitting while the timer runs stops it', async ({ page }) => {
   await page.evaluate(() => localStorage.setItem('gistats_timer_start', (Date.now() - 90000).toString()));
   await page.reload();
 
+  // The timer must actually be running before the submit, or the check below proves nothing.
+  await expect(page.locator('#timer-btn')).toHaveText('■');
+
   await fillEntry(page);
   await page.click('button.btn-primary');
 
