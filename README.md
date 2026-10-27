@@ -144,7 +144,7 @@ Before the first run, download the browser:
 npx playwright install chromium
 ```
 
-Then `mise run integration-test` runs the whole suite. To debug a failing spec, use `npx playwright test --ui` to step through it, or open the trace from the last run with `npx playwright show-report`.
+Then `mise run integration-test` runs the whole suite. If it stops with "Process from config.webServer was not able to start", something else is probably using port 8765. To debug a failing spec, use `npx playwright test --ui` to step through it, or open the trace from the last run with `npx playwright show-report`.
 
 ---
 
