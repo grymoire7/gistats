@@ -6,8 +6,10 @@ const format = (d) =>
 
 // Far-future timestamps, one minute apart and increasing, so entries never hit
 // the unique (user_id, occurred_at) index and the newest sorts first (DESC list).
+// The year advances with Playwright's worker index: a worker restarted after a failure
+// restarts the counter, and this keeps its values clear of the earlier worker's.
 let counter = 0;
-const BASE_MS = Date.UTC(2090, 0, 1);
+const BASE_MS = Date.UTC(2090 + Number(process.env.TEST_WORKER_INDEX || 0), 0, 1);
 
 function uniqueOccurredAt() {
   return format(new Date(BASE_MS + counter++ * 60000));
