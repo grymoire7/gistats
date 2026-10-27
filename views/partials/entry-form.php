@@ -44,6 +44,7 @@ $errors = $errors ?? [];
           hx-post="<?= htmlspecialchars($formAction) ?>"
           hx-target="#entry-form-wrap"
           hx-swap="outerHTML"
+          hx-disabled-elt="find button[type=submit]"
           style="display:flex;flex-direction:column;gap:14px;">
         <?= csrf_field() ?>
 
@@ -79,7 +80,9 @@ $errors = $errors ?? [];
 
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
             <div style="display:flex;gap:10px;">
-                <button type="submit" class="btn-primary">Save</button>
+                <button type="submit" class="btn-primary">
+                    <span class="label-idle">Save</span><span class="label-busy">Saving…</span>
+                </button>
                 <?php if ($isEdit): ?>
                 <button type="button" class="btn-outline"
                     hx-get="<?= htmlspecialchars($baseUrl) ?>/entries/new"
