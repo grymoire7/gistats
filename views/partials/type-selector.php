@@ -40,7 +40,7 @@ function selectType(t) {
     document.getElementById('stool-type-input').value = t;
     document.querySelectorAll('.type-btn').forEach(btn => {
         btn.style.borderColor = btn.dataset.type == t
-            ? 'var(--color-green)'
+            ? 'var(--color-green-bright)'
             : 'var(--color-border)';
     });
 }

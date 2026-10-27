@@ -15,7 +15,7 @@ $resetError      = $resetError      ?? null;
     <p style="color:var(--color-red);margin:0 0 16px;font-size:14px;"><?= htmlspecialchars($passwordError) ?></p>
     <?php endif; ?>
     <?php if ($passwordSuccess): ?>
-    <p style="color:var(--color-green);margin:0 0 16px;font-size:14px;">Password updated.</p>
+    <p style="color:var(--color-green-bright);margin:0 0 16px;font-size:14px;">Password updated.</p>
     <?php endif; ?>
     <form method="post" action="<?= htmlspecialchars($config['base_url']) ?>/admin/password" style="display:flex;flex-direction:column;gap:14px;">
         <?= csrf_field() ?>
@@ -145,7 +145,7 @@ $resetError      = $resetError      ?? null;
 <div class="card" style="margin-bottom:20px;">
     <h3 style="font-size:15px;font-weight:600;margin:0 0 16px;">Reset All Data</h3>
     <?php if ($resetResult !== null): ?>
-    <p style="color:var(--color-green);margin:0 0 16px;font-size:14px;">
+    <p style="color:var(--color-green-bright);margin:0 0 16px;font-size:14px;">
         Deleted <?= $resetResult ?> <?= $resetResult === 1 ? 'entry' : 'entries' ?>.
     </p>
     <?php elseif ($resetError !== null): ?>
