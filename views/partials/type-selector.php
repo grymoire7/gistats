@@ -12,7 +12,7 @@ $imgExt   = 'png'; // Images sourced from Wikimedia Commons as PNG
             class="type-btn"
             data-type="<?= $t ?>"
             onclick="selectType(<?= $t ?>)"
-            style="background:var(--color-canvas);border:2px solid <?= ($selected === $t) ? 'var(--color-green)' : 'var(--color-border)' ?>;border-radius:8px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            style="background:var(--color-canvas);border:2px solid <?= ($selected === $t) ? 'var(--color-green-bright)' : 'var(--color-border)' ?>;border-radius:8px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
             <img src="<?= htmlspecialchars($baseUrl) ?>/images/bristol/type<?= $t ?>.<?= $imgExt ?>"
                  alt="Type <?= $t ?>"
                  style="width:100%;max-width:60px;height:auto;border-radius:4px;">
@@ -26,7 +26,7 @@ $imgExt   = 'png'; // Images sourced from Wikimedia Commons as PNG
             class="type-btn"
             data-type="<?= $t ?>"
             onclick="selectType(<?= $t ?>)"
-            style="background:var(--color-canvas);border:2px solid <?= ($selected === $t) ? 'var(--color-green)' : 'var(--color-border)' ?>;border-radius:8px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            style="background:var(--color-canvas);border:2px solid <?= ($selected === $t) ? 'var(--color-green-bright)' : 'var(--color-border)' ?>;border-radius:8px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
             <img src="<?= htmlspecialchars($baseUrl) ?>/images/bristol/type<?= $t ?>.<?= $imgExt ?>"
                  alt="Type <?= $t ?>"
                  style="width:100%;max-width:60px;height:auto;border-radius:4px;">

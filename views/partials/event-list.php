@@ -20,7 +20,7 @@ $baseUrl    = $config['base_url'];
            hx-get="<?= htmlspecialchars($baseUrl) ?>/entries"
            hx-target="#entries-wrap"
            hx-swap="innerHTML"
-           style="font-size:12px;color:var(--color-green);">Show all</a>
+           style="font-size:12px;color:var(--color-green-bright);">Show all</a>
         <?php endif; ?>
     </div>
     <?php if (empty($entries)): ?>

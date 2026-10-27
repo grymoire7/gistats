@@ -36,7 +36,7 @@ $monthName = DateTime::createFromFormat('!m', $month)->format('F');
 
         <?php foreach ($calendar['days'] as $day):
             $isToday  = ($day['date'] === $today);
-            $border   = $isToday ? '2px solid var(--color-green)' : '1px solid var(--color-border)';
+            $border   = $isToday ? '2px solid var(--color-green-bright)' : '1px solid var(--color-border)';
         ?>
         <div style="background:var(--color-canvas);border:<?= $border ?>;border-radius:5px;padding:3px;text-align:center;min-height:52px;<?= $day['count'] ? 'cursor:pointer;' : '' ?>"
             <?php if ($day['count']): ?>
@@ -45,7 +45,7 @@ $monthName = DateTime::createFromFormat('!m', $month)->format('F');
             hx-target="#entries-wrap"
             hx-swap="innerHTML"
             <?php endif; ?>>
-            <div style="font-size:10px;color:<?= $isToday ? 'var(--color-green)' : 'var(--color-muted)' ?>;font-weight:<?= $isToday ? '700' : '400' ?>;"><?= $day['day'] ?></div>
+            <div style="font-size:10px;color:<?= $isToday ? 'var(--color-green-bright)' : 'var(--color-muted)' ?>;font-weight:<?= $isToday ? '700' : '400' ?>;"><?= $day['day'] ?></div>
             <?php if ($day['dominant_type']): ?>
             <img src="<?= htmlspecialchars($baseUrl) ?>/images/bristol/type<?= $day['dominant_type'] ?>.png"
                  alt="Type <?= $day['dominant_type'] ?>"
