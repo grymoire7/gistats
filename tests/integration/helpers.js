@@ -15,10 +15,17 @@ function uniqueOccurredAt() {
   return format(new Date(BASE_MS + counter++ * 60000));
 }
 
-// Current local time as a datetime-local value (for specs that need today's month).
+// The app renders its calendar in this timezone (config.php 'timezone'), whatever the
+// machine running the tests is set to.
+const APP_TIMEZONE = 'America/Chicago';
+
+// Current time in the app's timezone as a datetime-local value (for specs that need today's month).
 function nowLocal() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: APP_TIMEZONE,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(new Date()).replace(' ', 'T');
 }
 
 // The hidden stool-type input and datetime field are set directly, as the old scripts did.
