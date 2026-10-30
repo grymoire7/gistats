@@ -81,6 +81,7 @@
         'use strict';
         var QUEUE_KEY = 'gistats_pending';
         var BASE_URL  = '<?= htmlspecialchars($config['base_url']) ?>';
+        var AUTHED    = <?= is_logged_in() ? 'true' : 'false' ?>;
 
         function getQueue() {
             try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
@@ -89,15 +90,21 @@
         function saveQueue(q) {
             localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
         }
-        function showFlash(msg, type) {
+        function showFlash(msg, type, sticky) {
             var area = document.getElementById('flash-area');
             if (!area) return;
             var cls = type === 'error' ? 'flash flash-error' : 'flash flash-success';
             area.innerHTML = '<div class="' + cls + '" id="flash-msg">' + msg + '</div>';
+            if (sticky) return;
             setTimeout(function () {
                 var el = document.getElementById('flash-msg');
                 if (el) el.style.display = 'none';
             }, 3000);
+        }
+        function sessionExpiredFlash() {
+            var n = getQueue().length;
+            showFlash('Session expired — <a href="' + BASE_URL + '/login" style="color:inherit;text-decoration:underline;">log in again</a> to sync '
+                + n + (n === 1 ? ' queued entry.' : ' queued entries.'), 'error', true);
         }
         function updatePendingUI() {
             var q         = getQueue();
@@ -136,6 +143,7 @@
                     occurred_at: fd.get('occurred_at'),
                     duration:    fd.get('duration') || '',
                     stool_type:  fd.get('stool_type'),
+                    urgency:     fd.get('urgency') || '0',
                     note:        fd.get('note') || '',
                 });
                 saveQueue(q);
@@ -154,6 +162,7 @@
             var token;
             try {
                 var r = await fetch(BASE_URL + '/csrf-token');
+                if (r.status === 401) { sessionExpiredFlash(); return; }
                 if (!r.ok) throw new Error();
                 token = (await r.json()).token;
             } catch (_) {
@@ -175,9 +184,11 @@
                             occurred_at: item.occurred_at,
                             duration:    item.duration,
                             stool_type:  item.stool_type,
+                            urgency:     item.urgency || '0',
                             note:        item.note,
                         }).toString(),
                     });
+                    if (res.status === 401) { sessionExpiredFlash(); return; }
                     if (!res.ok) throw new Error();
                     var remaining = getQueue();
                     remaining.shift();
@@ -194,6 +205,9 @@
 
         window.syncQueue = syncQueue;
         updatePendingUI();
+        // The phone usually reconnects while the app is closed, so the window
+        // 'online' event never fires — drain the queue on open instead.
+        if (AUTHED && navigator.onLine) syncQueue();
     }());
     </script>
 </body>
