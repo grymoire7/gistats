@@ -1,9 +1,9 @@
 <?php
 // lib/csrf.php
+require_once __DIR__ . '/session.php';
+
 function csrf_token() {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    ensure_session_started();
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -15,9 +15,7 @@ function csrf_field() {
 }
 
 function verify_csrf($token) {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    ensure_session_started();
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 

@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/session.php';
 
 function is_logged_in(): bool
 {
-    if (session_status() === PHP_SESSION_NONE) session_start();
+    ensure_session_started();
     return !empty($_SESSION['user_id']);
 }
 
@@ -27,7 +28,7 @@ function require_auth(): void
 
 function current_user_id(): int
 {
-    if (session_status() === PHP_SESSION_NONE) session_start();
+    ensure_session_started();
     return (int) ($_SESSION['user_id'] ?? 0);
 }
 
@@ -35,7 +36,7 @@ function login(string $username, string $password): bool
 {
     $user = DB::fetch('SELECT * FROM users WHERE username = ?', [$username]);
     if (!$user || !password_verify($password, $user['password_hash'])) return false;
-    if (session_status() === PHP_SESSION_NONE) session_start();
+    ensure_session_started();
     session_regenerate_id(true);
     $_SESSION['user_id'] = $user['id'];
     return true;
@@ -43,7 +44,7 @@ function login(string $username, string $password): bool
 
 function logout(): void
 {
-    if (session_status() === PHP_SESSION_NONE) session_start();
+    ensure_session_started();
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $p = session_get_cookie_params();

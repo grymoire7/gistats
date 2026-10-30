@@ -1,8 +1,8 @@
 <?php
-session_start();
-
 $config = require __DIR__ . '/config.php';
+$GLOBALS['gistats_config'] = $config;
 
+require_once __DIR__ . '/lib/session.php';
 require_once __DIR__ . '/lib/db.php';
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/entries.php';
@@ -10,6 +10,8 @@ require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/csrf.php';
 require_once __DIR__ . '/lib/backup.php';
 require_once __DIR__ . '/router.php';
+
+start_app_session($config);
 
 try {
     DB::init($config);

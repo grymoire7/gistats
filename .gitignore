@@ -35,6 +35,9 @@ database.sqlite
 database.sqlite-shm
 database.sqlite-wal
 
+# App-owned session store (created next to the database)
+/sessions/
+
 # Production config override (never committed)
 config.local.php
 
